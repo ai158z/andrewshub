@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+numpy
+scipy
+pydantic
+redis
+pymongo
+qiskit
+py-orch-or
