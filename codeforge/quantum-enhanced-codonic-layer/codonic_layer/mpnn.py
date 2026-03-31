@@ -1,0 +1,1 @@
+serializable_data[key] = v.tolist() if isinstance(v, np.ndarray) else v
