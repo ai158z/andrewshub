@@ -1,0 +1,125 @@
+import pytest
+from requirements import parse_requirements, validate_package_versions, check_compatibility
+
+def test_parse_requirements_basic():
+    reqs = parse_requirements()
+    assert isinstance(reqs, dict)
+    assert len(reqs) > 0
+
+def test_parse_requirements_contains_numpy():
+    reqs = parse_requirements()
+    assert 'numpy' in reqs
+    assert reqs['numpy'] >= '1.20.0'
+
+def test_parse_requirements_contains_scipy():
+    reqs = parse_requirements()
+    assert 'scipy' in reqs
+    assert reqs['scipy'] >= '1.7.0'
+
+def test_parse_requirements_contains_qiskit():
+    reqs = parse_requirements()
+    assert 'qiskit' in reqs
+    assert reqs['qiskit'] >= '0.30.0'
+
+def test_parse_requirements_contains_typing_extensions():
+    reqs = parse_requirements()
+    assert 'typing_extensions' in reqs
+    assert reqs['typing_extensions'] >= '3.10.0'
+
+def test_parse_requirements_all_packages_present():
+    reqs = parse_requirements()
+    expected_packages = {'numpy', 'scipy', 'qiskit', 'typing_extensions'}
+    assert set(reqs.keys()) == expected_packages
+
+def test_parse_requirements_returns_dict():
+    reqs = parse_requirements()
+    assert isinstance(reqs, dict)
+
+def test_validate_package_versions_valid():
+    requirements = {
+        'numpy': '1.20.0',
+        'scipy': '1.7.0',
+        'qiskit': '0.30.0',
+        'typing_extensions': '3.10.0'
+    }
+    result = validate_package_versions(requirements)
+    assert result is True
+
+def test_validate_package_versions_invalid():
+    requirements = {
+        'numpy': '1.19.0',  # Below minimum
+        'scipy': '1.7.0',
+        'qiskit': '0.30.0',
+        'typing_extensions': '3.10.0'
+    }
+    result = validate_package_versions(requirements)
+    assert result is False
+
+def test_check_compatibility_all_valid():
+    installed = {
+        'numpy': '1.21.0',
+        'scipy': '1.8.0',
+        'qiskit': '0.31.0',
+        'typing_extensions': '4.0.0'
+    }
+    result = check_compatibility(installed)
+    assert result is True
+
+def test_check_compatibility_numpy_incompatible():
+    installed = {
+        'numpy': '1.19.0',  # Below required minimum
+        'scipy': '1.8.0',
+        'qiskit': '0.31.0',
+        'typing_extensions': '4.0.0'
+    }
+    result = check_compatibility(installed)
+    assert result is False
+
+def test_check_compatibility_missing_package():
+    installed = {
+        'numpy': '1.21.0',
+        'scipy': '1.8.0',
+        # Missing qiskit
+        'typing_extensions': '4.0.0'
+    }
+    result = check_compatibility(installed)
+    assert result is False
+
+def test_check_compatibility_empty_input():
+    result = check_compatibility({})
+    assert result is False
+
+def test_check_compatibility_extra_package():
+    installed = {
+        'numpy': '1.21.0',
+        'scipy': '1.8.0',
+        'qiskit': '0.31.0',
+        'typing_extensions': '4.0.0',
+        'extra_package': '1.0.0'
+    }
+    result = check_compatibility(installed)
+    assert result is True
+
+def test_parse_requirements_version_operators():
+    reqs = parse_requirements()
+    assert '>=' in reqs['numpy'] or '==' in reqs['numpy'] or '>=' in reqs['scipy']
+
+def test_validate_package_versions_none_dict():
+    result = validate_package_versions(None)
+    assert result is False
+
+def test_validate_package_versions_empty_dict():
+    result = validate_package_versions({})
+    assert result is True
+
+def test_check_compatibility_with_none():
+    result = check_compatibility(None)
+    assert result is False
+
+def test_parse_requirements_format():
+    reqs = parse_requirements()
+    for pkg, version in reqs.items():
+        assert isinstance(pkg, str)
+        assert isinstance(version, str)
+        assert len(pkg) > 0
+        assert len(version) > 0
