@@ -1,75 +1,67 @@
-import logging
 import torch
-from torch import Tensor
-from typing import Tuple, Dict
+import numpy as np
+import logging
+from typing import Tuple, Dict, Optional
+
 from .mpnn_model import MPNNModel
 from .magic_state_metrics import calculate_magic_state_metrics, QualiaTracker
 from .inverse_solver import solve_inverse_problem
-from .test_simulations import test_ambiguous_input
+from .test_simulations import check_ambiguous_input
+
+logger = logging.getLogger(__name__)
+
 
 class QuantumSensoryProcessor:
-    def __init__(self):
-        self.model = MPNNModel()
+    """Quantum-inspired sensory processing pipeline.
+
+    Pipeline:
+        1. Encode raw sensor data through the MPNN
+        2. Compute magic-state metrics (qualia indicators)
+        3. Detect ambiguity — if ambiguous, run inverse calibration
+        4. Track qualia trend over time
+    """
+
+    def __init__(
+        self,
+        input_dim: int = 10,
+        output_dim: int = 10,
+        hidden_dim: int = 32,
+        ambiguity_threshold: float = 0.85,
+    ):
+        self.model = MPNNModel(
+            input_dim=input_dim, output_dim=output_dim, hidden_dim=hidden_dim
+        )
         self.qualia_tracker = QualiaTracker()
-        self.logger = logging.getLogger(__name__)
+        self.ambiguity_threshold = ambiguity_threshold
 
-    def process_data(self, input_data: Tensor) -> Tuple[Tensor, Dict[str, float]]:
-        """Process sensory data using the quantum-inspired pipeline.
+    def process(self, raw_input: np.ndarray) -> np.ndarray:
+        """Process raw numpy sensor data and return processed output as numpy."""
+        tensor = torch.tensor(raw_input, dtype=torch.float32)
+        output, _ = self.process_tensor(tensor)
+        return output.detach().numpy()
 
-        Args:
-            input_data: Input tensor representing sensory data.
+    def process_tensor(
+        self, input_data: torch.Tensor
+    ) -> Tuple[torch.Tensor, Dict[str, float]]:
+        """Full pipeline on a torch tensor.
 
         Returns:
-            A tuple containing the processed output tensor and a dictionary of magic state metrics.
-
-        Raises:
-            ValueError: If input data is not a PyTorch Tensor.
-            RuntimeError: If any step of processing fails.
+            (output_tensor, magic_state_metrics)
         """
-        if not isinstance(input_data, Tensor):
-            raise ValueError("Input data must be a PyTorch Tensor")
-        
-        try:
-            # Forward pass through the MPNN model
-            output = self.model.forward(input_data)
-        except Exception as e:
-            self.logger.error("MPNN model forward pass failed", exc_info=True)
-            raise RuntimeError("Model processing failed") from e
-
-        # Calculate magic state metrics from the output
-        try:
-            metrics = calculate_magic_state_metrics(output)
-        except Exception as e:
-            self.logger.error("Magic state metrics calculation failed", exc_info=True)
-            raise RuntimeError("Metrics calculation failed") from e
-
-        # Update qualia tracker with the computed metrics
+        output = self.model(input_data)
+        metrics = calculate_magic_state_metrics(output)
         self.qualia_tracker.update(metrics)
 
-        # Check for ambiguous input using test simulation
-        try:
-            is_ambiguous = test_ambiguous_input(input_data)
-        except Exception as e:
-            self.logger.warning("Ambiguous input check failed", exc_info=True)
-            is_ambiguous = False  # Default to non-ambiguous if check fails
-
-        if is_ambiguous:
-            try:
-                # Solve the inverse problem for ambiguous inputs
-                inverse_solution = solve_inverse_problem(input_data)
-                self.logger.info("Applied inverse solution for ambiguous input")
-                # Modify output based on inverse solution (example logic)
-                output = inverse_solution * output
-                # Recalculate metrics after modifying output
-                try:
-                    metrics = calculate_magic_state_metrics(output)
-                except Exception as e:
-                    self.logger.error("Magic state metrics recalculation failed", exc_info=True)
-                    raise RuntimeError("Metrics recalculation failed") from e
-                # Update qualia tracker with the new metrics
-                self.qualia_tracker.update(metrics)
-            except Exception as e:
-                self.logger.error("Inverse problem solving failed", exc_info=True)
-                raise RuntimeError("Inverse solution failed") from e
+        if check_ambiguous_input(input_data, entropy_threshold=self.ambiguity_threshold):
+            logger.info("Ambiguous input detected — running inverse calibration")
+            inv = solve_inverse_problem(output, model=self.model, max_steps=100)
+            calibrated = inv["optimized_input"]
+            output = self.model(calibrated)
+            metrics = calculate_magic_state_metrics(output)
+            self.qualia_tracker.update(metrics)
 
         return output, metrics
+
+    @property
+    def qualia_trend(self) -> float:
+        return self.qualia_tracker.trend()

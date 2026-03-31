@@ -1,5 +1,4 @@
-torch
-numpy
-scipy
-qiskit
-pytest
+torch>=2.0.0
+numpy>=1.21.0
+scipy>=1.8.0
+pytest>=7.0.0
