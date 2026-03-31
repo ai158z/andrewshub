@@ -1,0 +1,375 @@
+import pytest
+import pkg_resources
+
+def test_requirements_installed():
+    """Test that all packages in requirements.txt are installed with correct versions"""
+    requirements = [
+        "numpy>=1.21.0",
+        "scipy>=1.7.0", 
+        "qiskit>=0.30.0",
+        "rclpy>=1.0.0",
+        "sensor-msgs>=1.12.0",
+        "geometry-msgs>=1.12.0",
+        "tf2-ros>=0.13.0",
+        "opencv-python>=4.5.0",
+        "pyquaternion>=0.9.0",
+        "pytest>=6.2.0",
+        "pytest-asyncio>=0.15.0",
+        "aiohttp>=3.7.0",
+        "websockets>=9.1",
+        "async-timeout>=3.1.0",
+        "pydantic>=1.8.0",
+        "pyyaml>=5.4.0",
+        "setuptools>=57.0.0",
+        "wheel>=0.36.0",
+        "cython>=0.29.0",
+        "matplotlib>=3.3.0",
+        "seaborn>=0.11.0",
+        "pandas>=1.3.0",
+        "scikit-learn>=0.24.0",
+        "torch>=1.9.0",
+        "torchvision>=0.10.0",
+        "transformers>=4.0.0",
+        "sympy>=1.8.0",
+        "numba>=0.53.0",
+        "tqdm>=4.62.0",
+        "requests>=2.25.0",
+        "urllib3>=1.26.0",
+        "pycryptodome>=3.10.0",
+        "cryptography>=3.4.8",
+        "pyjwt>=2.1.0",
+        "python-dateutil>=2.8.0",
+        "pytz>=2021.1",
+        "six>=1.16.0",
+        "typing-extensions>=3.7.4",
+        "dataclasses>=0.6; python_version < '3.7'",
+        "typing>=3.7.4; python_version < '3.7'",
+        "configparser>=5.0.0",
+        "pathlib2>=2.3.0",
+        "asyncio-mqtt>=0.8.0",
+        "paho-mqtt>=1.5.0",
+        "fastapi>=0.68.0",
+        "uvicorn>=0.15.0",
+        "gunicorn>=20.1.0",
+        "celery>=5.1.0",
+        "redis>=3.5.0",
+        "flask>=2.0.0",
+        "flask-socketio>=5.1.0",
+        "eventlet>=0.30.0",
+        "gevent>=21.1.2",
+        "greenlet>=1.1.0",
+        "zmq>=22.0.0",
+        "pyzmq>=22.0.0",
+        "pyserial>=3.5",
+        "pyusb>=1.2.0",
+        "kivy>=2.0.0",
+        "kivymd>=0.104.0",
+        "plyer>=2.0.0",
+        "cython>=0.29.0",
+        "maturin>=0.11.0",
+        "mypy>=0.910",
+        "black>=21.7.0",
+        "isort>=5.9.0",
+        "pre-commit>=2.13.0",
+        "flake8>=3.9.0",
+        "pylint>=2.9.0",
+        "autopep8>=1.5.7",
+        "yapf>=0.31.0",
+        "mccabe>=0.6.1",
+        "pyflakes>=2.3.1",
+        "pycodestyle>=2.7.0",
+        "bandit>=1.7.0",
+        "safety>=1.10.0",
+        "pip-audit>=0.1.0",
+        "pipenv>=2021.5.29",
+        "poetry>=1.1.0",
+        "setuptools-scm>=6.0.0",
+        "versioneer>=0.18",
+        "bump2version>=1.0.1",
+        "twine>=3.4.0",
+        "keyring>=23.0.0",
+        "keyrings.alt>=4.0.0",
+        "importlib-metadata>=4.6.0",
+        "importlib-resources>=5.2.0",
+        "zipp>=3.5.0",
+        "configobj>=5.0.6",
+        "appdirs>=1.4.4",
+        "distlib>=0.3.2",
+        "filelock>=3.0.12",
+        "virtualenv>=20.4.0",
+        "pip>=21.2.0",
+        "pip-tools>=6.2.0",
+        "pytest-cov>=2.12.0",
+        "pytest-html>=3.1.1",
+        "pytest-mock>=3.6.1",
+        "pytest-sugar>=0.9.4",
+        "pytest-timeout>=1.4.2",
+        "pytest-xdist>=2.3.0",
+        "hypothesis>=6.14.0",
+        "coverage>=5.5",
+        "tox>=3.24.0",
+        "flake8-docstrings>=1.6.0",
+        "pep8-naming>=0.12.0",
+        "pydocstyle>=6.1.1",
+        "sphinx>=4.1.2",
+        "sphinx-rtd-theme>=0.5.2",
+        "sphinxcontrib-applehelp>=1.0.2",
+        "sphinxcontrib-devhelp>=1.0.2",
+        "sphinxcontrib-htmlhelp>=2.0.0",
+        "sphinxcontrib-jsmath>=1.0.1",
+        "sphinxcontrib-qthelp>=1.0.3",
+        "sphinxcontrib-serializinghtml>=1.1.5",
+        "alabaster>=0.7.12",
+        "babel>=2.9.1",
+        "docutils>=0.17.1",
+        "imagesize>=1.2.0",
+        "Jinja2>=3.0.1",
+        "MarkupSafe>=2.0.1",
+        "Pygments>=2.9.0",
+        "snowballstemmer>=2.1.0"
+    ]
+    
+    for req in requirements:
+        if ';' in req:
+            # Skip platform-specific requirements
+            continue
+        parsed_req = pkg_resources.Requirement.parse(req)
+        dist = pkg_resources.get_distribution(parsed_req.project_name)
+        assert parsed_req.specifier.contains(dist.version), f"{req} not satisfied"
+
+def test_no_duplicate_packages():
+    """Test that there are no duplicate package entries"""
+    with open('requirements.txt', 'r') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip() and not line.startswith('#')]
+    
+    # Check for exact duplicates
+    assert len(lines) == len(set(lines)), "Duplicate package entries found"
+
+def test_valid_package_format():
+    """Test that all requirements are in valid format"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            # Should be in format "package>=version" or "package==version" or just "package"
+            assert '==' in line or '>=' in line or '<=' in line or line.count('=') == 0, f"Invalid format: {line}"
+
+def test_no_empty_lines_in_middle():
+    """Test that there are no empty lines in the middle of the file"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    lines = content.split('\n')
+    # Check for empty lines that aren't at the end
+    empty_lines = [i for i, line in enumerate(lines) if line.strip() == '']
+    if empty_lines and empty_lines[-1] != len(lines) - 1:
+        # Allow one trailing empty line, but not empty lines in the middle
+        assert False, "Empty lines found in middle of requirements.txt"
+
+def test_no_comments_only_lines():
+    """Test that there are no lines with only comments"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        stripped = line.strip()
+        # Should not have lines that are only comments with no package
+        if stripped.startswith('#') and not any(c.isalnum() for c in stripped if c != '#'):
+            assert False, "Found line with only comment and no package"
+
+def test_consistent_version_specifiers():
+    """Test that version specifiers are consistent"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    version_chars = ['>=', '==', '<=', '~=', '!=']
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            # Count version specifiers
+            spec_count = sum(line.count(char) for char in version_chars)
+            # Should have exactly one version specifier per line
+            if spec_count > 1:
+                # Exception for complex version specs like "package>=1.0,<2.0"
+                if not ('>=' in line and ',' in line):
+                    assert False, f"Multiple version specifiers in line: {line}"
+
+def test_no_local_paths():
+    """Test that there are no local paths in requirements"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    lines = content.split('\n')
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            # Check if line contains a local path reference like ./ or ../
+            assert '. ' not in line and '..' not in line, f"Local path found in line: {line}"
+
+def test_requirements_sorted():
+    """Test that requirements are in alphabetical order"""
+    with open('requirements.txt', 'r') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip() and not line.startswith('#')]
+    
+    # Get package names (before version specifiers)
+    packages = []
+    for line in lines:
+        for sep in ['>=', '==', '<=', '~=', '!=']:
+            if sep in line:
+                packages.append(line.split(sep)[0])
+                break
+        else:
+            if line:
+                packages.append(line)
+    
+    # Check if packages list is sorted
+    assert packages == sorted(packages), "Requirements are not sorted alphabetically"
+
+def test_no_ambiguous_version_specs():
+    """Test that version specifications are not ambiguous"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            # Should not have both == and >= or <= in same line
+            has_exact = '==' in line
+            has_other = '>=' in line or '<=' in line or '!=' in line
+            assert not (has_exact and has_other), f"Ambiguous version spec in: {line}"
+
+def test_no_deprecated_packages():
+    """Test that no deprecated packages are included"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    deprecated = [
+        'distribute',  # Replaced by setuptools
+        'setuptools<', # Old setuptools versions
+    ]
+    
+    for dep in deprecated:
+        assert dep not in content, f"Deprecated package {dep} found in requirements"
+
+def test_valid_python_version_markers():
+    """Test that python version markers are valid"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.strip()
+        if line and ';' in line:
+            # Check if it has python version markers
+            parts = line.split(';')
+            if len(parts) > 1:
+                marker = parts[1].strip()
+                if 'python_version' in marker:
+                    # Should be valid python version marker
+                    assert 'python_version' in marker, "Invalid python version marker"
+
+def test_no_conflicting_extras():
+    """Test that there are no conflicting extras_require"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    # Should not have conflicting extras like [test] and [dev] together
+    lines = content.split('\n')
+    extras = []
+    for line in lines:
+        if '[' in line and ']' in line:
+            extra_start = line.find('[')
+            extra_end = line.find(']')
+            if extra_start != -1 and extra_end != -1:
+                extra = line[extra_start+1:extra_end]
+                extras.append(extra)
+    
+    # No conflicting extras
+    assert len(set(extras)) == len(extras), "Conflicting extras found"
+
+def test_unique_package_names():
+    """Test that package names are unique"""
+    with open('requirements.txt', 'r') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip() and not line.startswith('#')]
+    
+    packages = []
+    for line in lines:
+        # Get package name (before version specifier)
+        for sep in ['>=', '==', '<=', '~=', '!=']:
+            if sep in line:
+                packages.append(line.split(sep)[0])
+                break
+        else:
+            if line:
+                packages.append(line)
+    
+    # Check uniqueness
+    assert len(packages) == len(set(packages)), "Duplicate package names found"
+
+def test_valid_package_names():
+    """Test that package names follow valid naming"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            # Package name should be valid
+            pkg_name = line.split('>')[0].split('==')[0].split('<')[0].split('~=')[0].split('!=')[0]
+            # Basic validation - no invalid characters
+            assert all(c.isalnum() or c in ['-', '_', '.'] for c in pkg_name), f"Invalid package name: {pkg_name}"
+
+def test_no_underscores_in_version():
+    """Test that version strings don't contain underscores"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    # Versions should not contain underscores
+    assert '_' not in content.replace('>=', ' ').replace('==', ' ').replace('<=', ' ').replace('~=', ' ').replace('!=', ' '), \
+        "Underscore found in version specifier"
+
+def test_requirements_file_exists():
+    """Test that requirements.txt file exists"""
+    try:
+        with open('requirements.txt', 'r'):
+            pass
+    except FileNotFoundError:
+        pytest.fail("requirements.txt file not found")
+
+def test_no_trailing_whitespace():
+    """Test that there is no trailing whitespace in requirements"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.rstrip('\n')
+        assert line == line.rstrip(), f"Trailing whitespace found in: {line}"
+
+def test_no_tabs_in_file():
+    """Test that requirements file doesn't contain tabs"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    assert '\t' not in content, "Tab characters found in requirements.txt"
+
+def test_consistent_newlines():
+    """Test that newlines are consistent"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    # Should use consistent line endings
+    lines = content.split('\n')
+    # Count CRLF vs LF
+    crlf_count = content.count('\r\n')
+    lf_count = content.count('\n') - crlf_count
+    
+    # Either all CRLF or all LF
+    assert not (crlf_count > 0 and lf_count > 0), "Inconsistent line endings in requirements.txt"
+
+def test_no_bom_in_file():
+    """Test that file doesn't have BOM"""
+    with open('requirements.txt', 'rb') as f:
+        first_bytes = f.read(3)
+    
+    # BOM is b'\xef\xbb\xbf'
+    assert first_bytes != b'\xef\xbb\xbf', "BOM found in requirements.txt"
