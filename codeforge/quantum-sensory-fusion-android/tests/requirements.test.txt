@@ -1,0 +1,226 @@
+import pytest
+import re
+
+def test_requirements_file_exists():
+    """Test that the requirements.txt file exists and is readable"""
+    try:
+        with open("requirements.txt", "r") as f:
+            content = f.read()
+        assert len(content) > 0
+    except FileNotFoundError:
+        pytest.fail("requirements.txt file not found")
+
+def test_requirements_has_qiskit_packages():
+    """Test that requirements.txt contains expected qiskit packages"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    required_packages = [
+        'qiskit==0.30.0',
+        'qiskit-ibmq-provider==0.18.0',
+        'qiskit-aer==0.9.0',
+        'qiskit-terra==0.18.0'
+    ]
+    
+    lines = content.strip().split('\n')
+    for package in required_packages:
+        assert package in content, f"Required package {package} not found in requirements"
+
+def test_requirements_versions_valid():
+    """Test that version numbers in requirements are valid"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    # Check that all lines have valid version format
+    lines = content.strip().split('\n')
+    version_pattern = r'==\d+\.\d+\.\d+'
+    
+    for line in lines:
+        if line.strip() and '==' in line:
+            package, version = line.strip().split('==')
+            assert re.match(version_pattern, f'=={version}'), f"Invalid version format in {line}"
+
+def test_no_duplicate_qiskit_packages():
+    """Test that there are no duplicate qiskit packages"""
+    with open("requirements.txt", "r") as f:
+        content = f.readlines()
+    
+    packages = []
+    for line in content:
+        if 'qiskit' in line and not line.startswith('#'):
+            pkg = line.split('==')[0]
+            packages.append(pkg)
+    
+    assert len(packages) == len(set(packages)), "Duplicate packages found in requirements"
+
+def test_requirements_has_pinning():
+    """Test that all requirements have pinned versions"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            assert '==' in line, f"Requirement {line} is not pinned"
+            pkg, version = line.split('==')
+            assert re.match(r'\d+\.\d+\.\d+', version), f"Invalid version format: {version}"
+
+def test_no_extra_qiskit_packages():
+    """Test that we don't have unnecessary qiskit packages"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    # Count qiskit packages
+    qiskit_lines = [line for line in content.split('\n') if 'qiskit' in line]
+    # Should not have more than expected qiskit packages
+    assert len(qiskit_lines) <= 20, "Too many qiskit packages listed"
+
+def test_requirements_has_core_packages():
+    """Test that core packages are present"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    core_packages = [
+        'numpy',
+        'scipy',
+        'pandas',
+        'matplotlib',
+        'scikit-learn'
+    ]
+    
+    for pkg in core_packages:
+        assert pkg in content, f"Core package {pkg} not found"
+
+def test_requirements_has_qiskit_core():
+    """Test that qiskit core packages are present"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    # Check for core qiskit packages
+    qiskit_core = [
+        'qiskit-terra',
+        'qiskit-aer', 
+        'qiskit-ibmq-provider'
+    ]
+    
+    for pkg in qiskit_core:
+        assert pkg in content, f"Qiskit core package {pkg} not found"
+
+def test_requirements_has_valid_versions():
+    """Test that version numbers are valid"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    version_pattern = r'\d+\.\d+\.\d+'
+    
+    for line in lines:
+        if '==' in line:
+            _, version = line.split('==')
+            assert re.match(version_pattern, version), f"Invalid version: {version}"
+
+def test_requirements_no_conflicts():
+    """Test that there are no version conflicts"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    # Check for version conflicts
+    packages = content.strip().split('\n')
+    versions = {}
+    for pkg in packages:
+        if '==' in pkg:
+            name, version = pkg.split('==')
+            if name in versions:
+                assert versions[name] == version, f"Version conflict for {name}"
+            versions[name] = version
+
+def test_requirements_has_licensing():
+    """Test that licensing is properly specified"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    # Check that we have license info
+    assert "license" in content.lower() or "LICENSE" in content
+
+def test_requirements_has_no_empty_lines():
+    """Test that requirements file has no empty lines"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    assert all(line.strip() for line in lines if line), "Empty lines found in requirements"
+
+def test_requirements_has_sorted_order():
+    """Test that requirements are in sorted order"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    packages = []
+    for line in lines:
+        if '==' in line and not line.startswith('#'):
+            pkg = line.split('==')[0]
+            packages.append(pkg)
+    
+    assert sorted(packages) == packages, "Requirements not in sorted order"
+
+def test_requirements_has_unique_packages():
+    """Test that all packages are unique"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    packages = []
+    for line in lines:
+        if '==' in line and not line.startswith('#'):
+            pkg = line.split('==')[0]
+            assert pkg not in packages, f"Duplicate package: {pkg}"
+            packages.append(pkg)
+
+def test_requirements_has_no_comments():
+    """Test that requirements file has no comments"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    for line in lines:
+        assert not line.startswith('#'), "Comments found in requirements file"
+
+def test_requirements_has_proper_format():
+    """Test that requirements are in proper format"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            assert '==' in line, "Requirement not in proper format"
+
+def test_requirements_has_no_trailing_whitespace():
+    """Test that requirements have no trailing whitespace"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    for line in lines:
+        assert not line.endswith(' '), "Trailing whitespace in requirements"
+
+def test_requirements_has_valid_package_names():
+    """Test that package names are valid"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    for line in lines:
+        if '==' in line and not line.startswith('#'):
+            pkg = line.split('==')[0]
+            assert re.match(r'^[a-zA-Z0-9\-_.]+$', pkg), f"Invalid package name: {pkg}"
+
+def test_requirements_has_no_circular_deps():
+    """Test that there are no circular dependencies"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    
+    # Simple check for circular dependencies
+    # (This is a simplified check - real circular deps are more complex)
+    assert "qiskit" not in content or "qiskit-aer" not in content or "qiskit-terra" not in content, "Potential circular dependency detected"
