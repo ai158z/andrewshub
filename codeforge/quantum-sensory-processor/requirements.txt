@@ -1,0 +1,4 @@
+numpy
+scipy
+qiskit
+typing_extensions
