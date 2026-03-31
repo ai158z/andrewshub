@@ -1,0 +1,90 @@
+import pytest
+from requirements import parse_requirements, RequirementsFileError
+
+def test_parse_requirements_success():
+    reqs = parse_requirements("requirements.txt")
+    assert isinstance(reqs, list)
+    assert all(isinstance(req, str) for req in reqs)
+
+def test_parse_requirements_file_not_found():
+    with pytest.raises(RequirementsFileError):
+        parse_requirements("non_existent_file.txt")
+
+def test_parse_requirements_empty_file():
+    reqs = parse_requirements("empty_requirements.txt")
+    assert reqs == []
+
+def test_parse_requirements_with_comments():
+    reqs = parse_requirements("requirements_with_comments.txt")
+    assert "fastapi==0.95.0" in reqs
+    assert "numpy==1.24.3" in reqs
+
+def test_parse_requirements_with_versions():
+    reqs = parse_requirements("requirements_with_versions.txt")
+    assert "fastapi==0.95.0" in reqs
+    assert "uvicorn==0.21.1" in reqs
+
+def test_parse_requirements_without_versions():
+    reqs = parse_requirements("requirements_no_version.txt")
+    assert "fastapi" in reqs
+    assert "uvicorn" in reqs
+
+def test_parse_requirements_mixed_format():
+    reqs = parse_requirements("requirements_mixed.txt")
+    assert "fastapi==0.95.0" in reqs
+    assert "requests" in reqs
+
+def test_parse_requirements_with_extras():
+    reqs = parse_requirements("requirements_with_extras.txt")
+    assert "celery[redis]==5.2.7" in reqs
+
+def test_parse_requirements_with_urls():
+    reqs = parse_requirements("requirements_with_urls.txt")
+    assert "https://github.com/user/repo/archive/master.zip" in reqs
+
+def test_parse_requirements_with_environment_markers():
+    reqs = parse_requirements("requirements_with_markers.txt")
+    assert "numpy==1.24.3; python_version>='3.6'" in reqs
+
+def test_parse_requirements_with_hashes():
+    reqs = parse_requirements("requirements_with_hashes.txt")
+    assert "package==1.0.0" in reqs
+
+def test_parse_requirements_with_editable_paths():
+    reqs = parse_requirements("requirements_with_editable.txt")
+    assert "-e ./local/package" in reqs
+
+def test_parse_requirements_with_vcs():
+    reqs = parse_requirements("requirements_with_vcs.txt")
+    assert "git+https://github.com/user/repo.git@main#egg=package" in reqs
+
+def test_parse_requirements_with_includes():
+    reqs = parse_requirements("requirements_with_includes.txt")
+    assert "included-package==1.0.0" in reqs
+
+def test_parse_requirements_with_recursive_includes():
+    reqs = parse_requirements("requirements_recursive.txt")
+    assert "nested-package==2.0.0" in reqs
+
+def test_parse_requirements_with_invalid_syntax():
+    with pytest.raises(RequirementsFileError):
+        parse_requirements("requirements_invalid.txt")
+
+def test_parse_requirements_with_empty_lines():
+    reqs = parse_requirements("requirements_with_empty_lines.txt")
+    assert "package1==1.0.0" in reqs
+    assert len(reqs) == 2
+
+def test_parse_requirements_with_whitespace():
+    reqs = parse_requirements("requirements_with_whitespace.txt")
+    assert "package1==1.0.0" in reqs
+
+def test_parse_requirements_with_multiple_lines():
+    reqs = parse_requirements("requirements_multiline.txt")
+    assert "package1==1.0.0" in reqs
+    assert "package2==2.0.0" in reqs
+
+def test_parse_requirements_with_duplicates():
+    reqs = parse_requirements("requirements_with_duplicates.txt")
+    assert len(reqs) == 2
+    assert reqs.count("package1==1.0.0") == 1
