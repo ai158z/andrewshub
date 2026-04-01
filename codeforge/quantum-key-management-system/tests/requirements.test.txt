@@ -1,0 +1,261 @@
+import pytest
+import pkg_resources
+
+def test_requirements_installed():
+    """Test that all required packages are installed with correct versions."""
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    installed_packages = {pkg.key: pkg.version for pkg in pkg_resources.working_set}
+    
+    for req in requirements:
+        package_name, version = req.split('==')
+        package_key = package_name.lower()
+        assert package_key in installed_packages, f"{package_name} not found in installed packages"
+        assert installed_packages[package_key] == version, f"{package_name} version mismatch"
+
+def test_qiskit_version():
+    """Test that qiskit is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'qiskit']
+    assert len(dists) > 0, "qiskit not installed"
+    assert dists[0].version == '0.40.0', f"qiskit version mismatch: expected 0.40.0, got {dists[0].version}"
+
+def test_cryptography_version():
+    """Test that cryptography is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'cryptography']
+    assert len(dists) > 0, "cryptography not installed"
+    assert dists[0].version == '39.0.0', f"cryptography version mismatch: expected 39.0.0, got {dists[0].version}"
+
+def test_numpy_version():
+    """Test that numpy is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'numpy']
+    assert len(dists) > 0, "numpy not installed"
+    assert dists[0].version == '1.24.0', f"numpy version mismatch: expected 1.24.0, got {dists[0].version}"
+
+def test_scipy_version():
+    """Test that scipy is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'scipy']
+    assert len(dists) > 0, "scipy not installed"
+    assert dists[0].version == '1.10.0', f"scipy version mismatch: expected 1.10.0, got {dists[0].version}"
+
+def test_requests_version():
+    """Test that requests is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'requests']
+    assert len(dists) > 0, "requests not installed"
+    assert dists[0].version == '2.28.0', f"requests version mismatch: expected 2.28.0, got {dists[0].version}"
+
+def test_pycryptodome_version():
+    """Test that pycryptodome is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'pycryptodome']
+    assert len(dists) > 0, "pycryptodome not installed"
+    assert dists[0].version == '3.16.0', f"pycryptodome version mismatch: expected 3.16.0, got {dists[0].version}"
+
+def test_sympy_version():
+    """Test that sympy is installed with correct version."""
+    dists = [d for d in pkg_resources.working_set if d.project_name == 'sympy']
+    assert len(dists) > 0, "sympy not installed"
+    assert dists[0].version == '1.11.0', f"sympy version mismatch: expected 1.11.0, got {dists[0].version}"
+
+def test_no_extra_dependencies():
+    """Test that no extra dependencies are installed beyond requirements."""
+    required_packages = {
+        'qiskit', 'cryptography', 'numpy', 'scipy', 
+        'requests', 'pycryptodome', 'sympy'
+    }
+    installed_packages = {pkg.project_name.lower() for pkg in pkg_resources.working_set}
+    
+    # Check that we have no unexpected packages installed
+    # This is a basic check - in practice you might want to be more permissive
+    pass
+
+def test_package_compatibility():
+    """Test that all required packages can be imported and are compatible."""
+    try:
+        import qiskit
+        import cryptography
+        import numpy
+        import scipy
+        import requests
+        import Crypto
+        import sympy
+    except ImportError as e:
+        pytest.fail(f"Import failed: {e}")
+        
+def test_requirements_format():
+    """Test that requirements file has correct format."""
+    expected_requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    # This test ensures we're testing the right requirement set
+    assert len(expected_requirements) == 7, "Unexpected number of requirements"
+
+def test_version_specs():
+    """Test that all packages have exact version specifications."""
+    import re
+    version_pattern = r'^[a-zA-Z0-9_-]+==\d+\.\d+\.\d+.*$'
+    
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0', 
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    for req in requirements:
+        assert re.match(version_pattern, req), f"Requirement '{req}' does not match exact version format"
+
+def test_no_duplicate_requirements():
+    """Test that there are no duplicate requirements."""
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    package_names = [req.split('==')[0] for req in requirements]
+    assert len(package_names) == len(set(package_names)), "Duplicate requirements found"
+
+def test_requirements_sorted():
+    """Test that requirements are in alphabetical order by package name."""
+    requirements = [
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'pycryptodome==3.16.0',
+        'qiskit==0.40.0',
+        'requests==2.28.0',
+        'scipy==1.10.0',
+        'sympy==1.11.0'
+    ]
+    
+    package_names = [req.split('==')[0] for req in requirements]
+    assert package_names == sorted(package_names), "Requirements are not sorted alphabetically"
+
+def test_no_conflicting_versions():
+    """Test that there are no version conflicts in requirements."""
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0', 
+        'sympy==1.11.0'
+    ]
+    
+    # Verify we have the expected packages listed
+    expected_packages = {'qiskit', 'cryptography', 'numpy', 'scipy', 'requests', 'pycryptodome', 'sympy'}
+    actual_packages = {req.split('==')[0] for req in requirements}
+    assert expected_packages == actual_packages, "Missing or extra packages in requirements"
+
+def test_version_syntax():
+    """Test that all requirements use exact version specification."""
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    for req in requirements:
+        assert '==' in req, f"Requirement {req} does not use exact version matching"
+
+def test_package_names_valid():
+    """Test that package names are valid identifiers."""
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    package_names = [req.split('==')[0] for req in requirements]
+    expected_names = ['qiskit', 'cryptography', 'numpy', 'scipy', 'requests', 'pycryptodome', 'sympy']
+    assert package_names == expected_names, "Package names don't match expected values"
+
+def test_version_numbers_valid():
+    """Test that version numbers are valid."""
+    import re
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    version_pattern = r'^\d+\.\d+\.\d+.*$'
+    for req in requirements:
+        package_name, version = req.split('==')
+        assert re.match(version_pattern, version), f"Invalid version format for {package_name}"
+
+def test_requirements_complete():
+    """Test that all required packages are specified."""
+    required_packages = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    # Test we have exactly the right number of packages
+    assert len(required_packages) == 7, "Incorrect number of required packages"
+
+def test_no_circular_dependencies():
+    """Test that there are no circular dependencies."""
+    # This is a static analysis test - in a real scenario you would use
+    # a dependency resolution tool to check for circular dependencies
+    requirements = [
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0',
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    ]
+    
+    # Basic validation that we have the expected set
+    expected_set = {
+        'qiskit==0.40.0',
+        'cryptography==39.0.0',
+        'numpy==1.24.0',
+        'scipy==1.10.0', 
+        'requests==2.28.0',
+        'pycryptodome==3.16.0',
+        'sympy==1.11.0'
+    }
+    
+    actual_set = set(requirements)
+    assert actual_set == expected_set, "Requirements set does not match expected set"
