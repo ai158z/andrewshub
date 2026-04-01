@@ -1,0 +1,7 @@
+qiskit
+cryptography
+numpy
+scipy
+requests
+pycryptodome
+sympy
