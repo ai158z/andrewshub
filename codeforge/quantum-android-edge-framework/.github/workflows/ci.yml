@@ -1,0 +1,84 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:6
+        ports:
+          - 6379:6379
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint pytest pytest-asyncio pytest-cov
+    
+    - name: Lint check
+      run: |
+        pip install pylint
+        pylint --rcfile=pylint.cfg *.py src/
+      continue-on-error: true
+    
+    - name: Run tests
+      run: |
+        pytest -v --cov=src --cov-report=xml
+    
+    - name: Build application
+      run: |
+        echo "Building application..."
+        # Add build steps if needed
+    
+    - name: Docker build
+      run: |
+        docker build -t quantum-android-edge-framework .
+    
+    - name: Run integration tests
+      run: |
+        pytest tests/integration
+    
+    - name: Run unit tests
+      run: |
+        pytest tests/unit
