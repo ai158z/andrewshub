@@ -1,115 +1,101 @@
 import argparse
+import logging
 import sys
-from typing import List
-from decimal import Decimal, InvalidOperation
+from typing import NoReturn
+from src.staking_calculator import calculate_staking_reward
 
-from src.staking_calculator import (
-    calculate_apy,
-    calculate_compound_interest,
-    calculate_lockup_penalty,
-    validate_inputs
-)
-
-def main():
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Staking Reward Calculator - Calculate staking rewards and APY"
+        description="Staking Reward Calculator",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     
     parser.add_argument(
-        '--principal',
-        type=Decimal,
-        default=Decimal('1000'),
-        help='Initial staked amount (default: 1000)'
+        "--stake_amount",
+        type=float,
+        required=True,
+        help="The amount to stake"
     )
     
     parser.add_argument(
-        '--rate',
-        type=Decimal,
-        default=Decimal('0.05'),
-        help='Annual interest rate (default: 0.05)'
-    )
-    
-    parser.add_argument(
-        '--days', 
+        "--duration",
         type=int,
-        default=365,
-        help='Number of staking days (default: 365)'
+        required=True,
+        help="Staking duration in days"
     )
     
     parser.add_argument(
-        '--compound-frequency',
-        type=int,
-        default=1,
-        help='Compound frequency per year (default: 1)'
+        "--lockup_percent",
+        type=float,
+        default=0.0,
+        help="Lockup percentage for early withdrawal penalty"
     )
     
     parser.add_argument(
-        '--penalty-rate',
-        type=Decimal,
-        default=Decimal('0.02'),
-        help='Lockup penalty rate (default: 0.02)'
+        "--annual_rate",
+        type=float,
+        default=0.08,
+        help="Annual percentage yield rate"
     )
     
     parser.add_argument(
-        '--output-format',
-        choices=['simple', 'detailed'],
-        default='detailed',
-        help='Output format (default: detailed)'
+        "--penalty_rate",
+        type=float,
+        default=0.02,
+        help="Penalty rate for early withdrawal"
     )
     
-    args = parser.parse_args()
-    
-    if len(sys.argv) == 1:
-        # If no arguments provided, show help
-        parser.print_help()
-        return
-    
+    return parser.parse_args()
+
+def run_calculator(stake_amount: float, duration: int, lockup_percent: float) -> None:
+    """Run the staking reward calculation with provided parameters."""
     try:
-        validate_inputs(args.principal, args.rate, args.days, args.compound_frequency, args.penalty_rate)
-    except ValueError as e:
-        print(f"Invalid input: {e}")
+        if stake_amount <= 0:
+            raise ValueError("Stake amount must be positive")
+        
+        if duration <= 0:
+            raise ValueError("Duration must be positive")
+            
+        if lockup_percent < 0 or lockup_percent > 100:
+            raise ValueError("Lockup percent must be between 0 and 100")
+            
+        # Default values for calculation
+        annual_rate = 0.08
+        penalty_rate = 0.02
+        
+        # Calculate the staking reward
+        reward = calculate_staking_reward(
+            stake_amount, 
+            duration, 
+            annual_rate, 
+            penalty_rate
+        )
+        
+        # Display results
+        print(f"Staking Calculation Results:")
+        print(f"Stake Amount: ${stake_amount:,.2f}")
+        print(f"Duration: {duration} days")
+        print(f"Annual Rate: {annual_rate*100:.2f}%")
+        print(f"Penalty Rate: {penalty_rate*100:.2f}%")
+        print(f"Estimated Reward: ${reward:,.2f}")
+        
+    except Exception as e:
+        logging.error(f"Calculation error: {str(e)}")
+        print(f"Error calculating reward: {str(e)}")
+
+def main() -> NoReturn:
+    """Main entry point for the CLI."""
+    try:
+        args = parse_args()
+        run_calculator(
+            args.stake_amount,
+            args.duration,
+            args.lockup_percent
+        )
+    except Exception as e:
+        logging.error(f"Application error: {str(e)}")
+        print(f"Application error: {str(e)}")
         sys.exit(1)
-    except TypeError as e:
-        print(f"Invalid input: {e}")
-        sys.exit(1)
-    
-    # Calculate simple interest as well for comparison
-    simple_interest = args.principal * args.rate * args.days / 365
-    
-    # Calculate APY
-    apy = calculate_apy(args.rate, args.days)
-    
-    # Calculate final amount with compound interest
-    final_amount = calculate_compound_interest(
-        args.principal, 
-        args.rate, 
-        args.days, 
-        args.compound_frequency
-    )
-    
-    # Calculate penalty amount
-    penalty_amount = calculate_lockup_penalty(args.principal, args.penalty_rate)
-    
-    # Display results
-    if args.output_format == 'detailed':
-        print(f"Principal Amount: {args.principal}")
-        print(f"Interest Rate: {args.rate * 100}%")
-        print(f"Staking Period: {args.days} days")
-        print(f"Compound Frequency: {args.compound_frequency} times per year")
-        print(f"APY: {apy:.2%}")
-        print(f"Final Amount: {final_amount}")
-        print(f"Penalty Amount: {penalty_amount}")
     else:
-        print(f"Estimated return: {final_amount} {args.principal} after {args.days} days")
-        print(f"APY: {apy:.2f}%")
-    
-    return {
-        'principal': args.principal,
-        'rate': args.rate,
-        'days': args.days,
-        'compound_frequency': args.compound_frequency,
-        'penalty_rate': args.penalty_rate,
-        'final_amount': final_amount,
-        'penalty_amount': penalty_amount,
-        'apy': apy
-    }
+        sys.exit(0)
