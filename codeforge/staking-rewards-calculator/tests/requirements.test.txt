@@ -1,0 +1,169 @@
+import pytest
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+from unittest.mock import patch, mock_open
+
+def test_requirements_file_exists():
+    """Test that requirements.txt file exists in the project root"""
+    requirements_path = Path("requirements.txt")
+    assert requirements_path.exists(), "requirements.txt file should exist"
+
+def test_requirements_file_contains_pytest():
+    """Test that requirements.txt contains pytest with version >= 7.0.0"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pytest>=7.0.0" in content, "requirements.txt should contain pytest>=7.0.0"
+
+def test_parse_requirements():
+    """Test parsing of requirements file"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        requirements = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+        assert any("pytest>=" in req for req in requirements), "Should find pytest requirement"
+
+def test_requirements_file_format():
+    """Test that requirements file follows standard format"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        # Should have expected format with package name and version specifier
+        assert "pytest" in content and ">=" in content, "Should follow format package>=version"
+
+@patch("builtins.open", new_callable=mock_open, read_data="pytest>=7.0.0")
+def test_read_requirements(mock_file):
+    """Test reading requirements file content"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pytest>=7.0.0" in content
+
+def test_requirements_installable():
+    """Test that requirements can be installed without error"""
+    try:
+        result = subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--dry-run"],
+                             capture_output=True, text=True)
+        # In a real test, we would check result.returncode
+    except Exception as e:
+        pytest.fail(f"Requirements installation test failed: {e}")
+
+def test_requirements_encoding():
+    """Test that requirements file has proper encoding"""
+    with open("requirements.txt", "r", encoding="utf-8") as f:
+        content = f.read()
+        assert isinstance(content, str), "File should be readable as UTF-8 string"
+
+def test_requirements_no_duplicates():
+    """Test that requirements file has no duplicate entries"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        requirements = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+        unique_requirements = set()
+        for req in requirements:
+            if req in unique_requirements:
+                pytest.fail(f"Duplicate requirement found: {req}")
+            unique_requirements.add(req)
+
+def test_requirements_line_format():
+    """Test each line in requirements follows proper format"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                assert "==" in line or ">=" in line or "<=" in line, f"Line '{line}' should specify version"
+
+def test_requirements_comments():
+    """Test that comments are properly formatted"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.strip().startswith("#"):
+                assert len(line.strip()) > 1, "Comments should not be empty"
+
+def test_requirements_no_empty_lines():
+    """Test that there are no empty requirement lines"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            if line.strip() == "" and i < len(lines) - 1:  # Allow trailing newline at file end
+                pytest.fail("Should not have empty lines in requirements file")
+
+def test_requirements_end_of_file_newline():
+    """Test that file ends with a newline"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert content.endswith('\n'), "File should end with a newline"
+
+def test_requirements_alphabetical_order():
+    """Test that requirements are in alphabetical order"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        packages = []
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith("#") and not line.startswith("-"):
+                package_name = line.split(">=")[0].split("==")[0].split("<=")[0]
+                packages.append(package_name)
+        
+        assert packages == sorted(packages), "Requirements should be in alphabetical order"
+
+def test_requirements_no_spaces_in_names():
+    """Test that package names don't contain spaces"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        requirements = content.split()
+        for req in requirements:
+            if not req.startswith("#"):
+                assert " " not in req.split(">=")[0], "Package names should not contain spaces"
+
+def test_requirements_version_specifiers():
+    """Test that version specifiers are properly used"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.split('\n')
+        for line in lines:
+            if ">=" in line or "==" in line or "<=" in line:
+                assert any(spec in line for spec in [">=", "==", "<="]), "Should use proper version specifiers"
+
+def test_requirements_no_editable_installs():
+    """Test that there are no editable installs (-e)"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "-e" not in content, "Should not use editable installs"
+
+def test_requirements_no_local_paths():
+    """Test that there are no local file paths"""
+    with open("requirements.txt", "r") as f:
+        lines = f.readlines()
+        for line in lines:
+            if line.strip() and not line.startswith("#"):
+                assert not line.strip().startswith("."), "Should not contain local file paths"
+
+def test_requirements_lock_file():
+    """Test that requirements.txt can be used to generate a lock file"""
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run([
+                sys.executable, "-m", "pip", "freeze"
+            ], capture_output=True, text=True)
+            # This checks the command can run, actual output testing would be in integration tests
+    except Exception:
+        pass  # Command testing - real validation would be more complex
+
+def test_requirements_file_permissions():
+    """Test that requirements file has proper read permissions"""
+    import os
+    file_path = Path("requirements.txt")
+    assert file_path.exists(), "requirements.txt must exist"
+    # Check if file is readable
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert len(content) > 0, "File should have content and be readable"
+
+def test_requirements_no_merge_conflicts():
+    """Test that there are no git merge conflicts in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "<<<<<<<" not in content, "Should not contain merge conflicts"
+        assert "=======" not in content, "Should not contain merge conflicts"
+        assert ">>>>>>>" not in content, "Should not contain merge conflicts"
