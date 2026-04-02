@@ -1,204 +1,118 @@
-import argparse
 import logging
-from decimal import Decimal, InvalidOperation
 from typing import Union
+from decimal import Decimal, getcontext
+
+# Set precision for decimal calculations
+getcontext().prec = 28
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def validate_inputs(*args) -> bool:
-    """
-    Validate that all input arguments are positive numbers.
-    
-    Args:
-        *args: Variable number of arguments to validate
-        
-    Returns:
-        bool: True if all inputs are valid positive numbers
-        
-    Raises:
-        ValueError: If any input is negative or not a number
-        TypeError: If any input is not a number
-    """
-    for arg in args:
-        # Check if the argument is a number (int, float, or Decimal)
-        if not isinstance(arg, (int, float, Decimal)):
-            logger.error(f"Invalid type: {type(arg)}. Expected number.")
-            raise TypeError(f"All inputs must be numbers. Received {type(arg)}")
-        
-        # Convert to Decimal for consistent comparison
-        try:
-            value = Decimal(str(arg))
-        except (InvalidOperation, TypeError) as e:
-            logger.error(f"Cannot convert {arg} to decimal: {e}")
-            raise TypeError(f"Invalid numeric value: {arg}")
-        
-        # Check if the value is negative
-        if value < 0:
-            logger.error(f"Negative value not allowed: {value}")
-            raise ValueError(f"All inputs must be non-negative. Received: {value}")
-            
-    return True
-
 def calculate_apy(rate: Union[float, Decimal], days: int) -> Decimal:
     """
-    Calculate Annual Percentage Yield (APY) based on a daily rate and compounding period.
+    Calculate Annual Percentage Yield (APY) based on a rate and number of days
     
     Args:
-        rate: Daily interest rate (as a decimal, e.g., 0.01 for 1%)
-        days: Number of days for compounding period
+        rate: Interest rate (as a decimal, e.g. 0.05 for 5%)
+        days: Number of days
         
     Returns:
-        Decimal: The calculated APY as a decimal (e.g., 0.12 for 12%)
-        
-    Raises:
-        ValueError: If rate or days are invalid
-        TypeError: If inputs are not numeric
+        APY as a Decimal value
     """
-    # Validate inputs
-    if not isinstance(rate, (int, float, Decimal)):
-        raise TypeError("Rate must be a number")
-    
-    if not isinstance(days, int) or days <= 0:
+    if days <= 0:
         raise ValueError("Days must be a positive integer")
     
-    # Convert inputs to Decimal for precision
-    rate_decimal = Decimal(str(rate))
-    days_decimal = Decimal(str(days))
+    if rate < 0:
+        raise ValueError("Rate cannot be negative")
     
-    # Calculate APY: (1 + rate)^days - 1
-    try:
-        apy = (Decimal('1') + rate_decimal) ** days_decimal - Decimal('1')
-        return apy
-    except Exception as e:
-        logger.error(f"Error calculating APY: {e}")
-        raise ValueError(f"Error calculating APY: {e}")
+    # APY formula: (1 + rate)^(365/days) - 1
+    daily_rate = rate / 365 * days
+    apy = (1 + daily_rate) ** (365 / days) - 1
+    
+    return Decimal(str(apy))
 
-def calculate_compound_interest(
-    principal: Union[float, Decimal], 
-    rate: Union[float, Decimal], 
-    time: Union[float, int], 
-    n: int
-) -> Decimal:
+def calculate_compound_interest(principal: Union[float, Decimal], 
+                                rate: Union[float, Decimal], 
+                                time_in_days: int) -> Decimal:
     """
-    Calculate compound interest using the formula: A = P(1 + r/n)^(nt).
+    Calculate compound interest using the formula: A = P(1 + r/365)^t
     
     Args:
-        principal: Initial amount invested
-        rate: Annual interest rate (as decimal, e.g., 0.05 for 5%)
-        time: Time period in years
-        n: Number of times interest is compounded per year
+        principal: Initial amount
+        rate: Annual interest rate (as a decimal)
+        time_in_days: Time period in days
         
     Returns:
-        Decimal: The total amount after compound interest
-        
-    Raises:
-        ValueError: If inputs are invalid
-        TypeError: If inputs are not numeric
+        Final amount after compound interest
     """
-    # Validate inputs
-    if not all(isinstance(x, (int, float, Decimal)) for x in [principal, rate, time]):
-        raise TypeError("All inputs must be numbers")
+    if principal < 0:
+        raise ValueError("Principal cannot be negative")
     
-    if not isinstance(n, int) or n <= 0:
-        raise ValueError("Compounding frequency (n) must be a positive integer")
+    if time_in_days < 0:
+        raise ValueError("Time cannot be negative")
     
-    # Convert inputs to Decimal
-    principal_decimal = Decimal(str(principal))
-    rate_decimal = Decimal(str(rate))
-    time_decimal = Decimal(str(time)))
-    n_decimal = Decimal(str(n))
-    
-    # Calculate compound interest: A = P(1 + r/n)^(nt)
-    try:
-        # Calculate (1 + r/n)
-        base = Decimal('1') + (rate_decimal / n_decimal)
-        # Calculate nt (total compoundings)
-        exponent = n_decimal * time_decimal
-        # Calculate final amount
-        amount = principal_decimal * (base ** exponent)
-        return amount
-    except Exception as e:
-        logger.error(f"Error calculating compound interest: {e}")
-        raise ValueError(f"Error calculating compound interest: {e}")
+    # Compound interest formula: A = P(1 + r)^t
+    # For staking, we use A = P(1 + r/365)^(days)
+    rate_per_day = rate / 365
+    amount = principal * (1 + rate_per_day) ** time_in_days
+    return Decimal(str(amount))
 
-def calculate_lockup_penalty(
-    amount: Union[float, Decimal], 
-    penalty_rate: Union[float, Decimal]
-) -> Decimal:
+def calculate_penalty(amount: Union[float, Decimal], 
+                       penalty_rate: Union[float, Decimal]) -> Decimal:
     """
-    Calculate the penalty amount for early withdrawal from a lockup period.
+    Calculate penalty amount based on a given amount and penalty rate
     
     Args:
-        amount: The total staked amount
-        penalty_rate: The penalty rate as a decimal (e.g., 0.05 for 5%)
+        amount: The principal amount
+        penalty_rate: Penalty rate as a decimal (e.g. 0.05 for 5% penalty)
         
     Returns:
-        Decimal: The penalty amount to be deducted
-        
-    Raises:
-        ValueError: If inputs are invalid
-        TypeError: If inputs are not numeric
+        The penalty amount
     """
-    # Validate inputs
-    if not all(isinstance(x, (int, float, Decimal)) for x in [amount, penalty_rate]):
-        raise TypeError("Amount and penalty_rate must be numbers")
+    if penalty_rate < 0:
+        raise ValueError("Penalty rate cannot be negative")
     
-    # Convert inputs to Decimal
-    amount_decimal = Decimal(str(amount))
-    penalty_rate_decimal = Decimal(str(penalty_rate))
+    if amount <= 0:
+        logger.warning("Amount should be positive")
     
-    # Calculate penalty
-    try:
-        penalty = amount_decimal * penalty_rate_decimal
-        return penalty
-    except Exception as e:
-        logger.error(f"Error calculating penalty: {e}")
-        raise ValueError(f"Error calculating penalty: {e}")
+    penalty = amount * penalty_rate
+    return Decimal(str(penalty))
 
-def main():
-    """Main function to run the staking reward calculator CLI."""
-    parser = argparse.ArgumentParser(description="Staking Reward Calculator")
-    parser.add_argument('--principal', type=float, help='Principal amount')
-    parser.add_argument('--rate', type=float, help='Annual interest rate (as decimal)')
-    parser.add_argument('--time', type=float, help='Time period in years')
-    parser.add_argument('--n', type=int, help='Compounding frequency per year')
-    parser.add_argument('--days', type=int, help='Number of days for APY calculation')
-    parser.add_argument('--penalty-rate', type=float, help='Penalty rate (as decimal)')
-    parser.add_argument('--amount', type=float, help='Amount for penalty calculation')
+def calculate_staking_reward(stake_amount: Union[float, Decimal], 
+                              duration_days: int, 
+                              annual_rate: Union[float, Decimal], 
+                              penalty_rate: Union[float, Decimal]) -> dict:
+    """
+    Calculate the staking reward for an amount over a given duration
     
-    args = parser.parse_args()
-    
-    # If no arguments provided, show help
-    if not any(vars(args).values()):
-        parser.print_help()
-        return
-    
-    try:
-        # Handle compound interest calculation
-        if args.principal is not None and args.rate is not None and args.time is not None and args.n is not None:
-            result = calculate_compound_interest(args.principal, args.rate, args.time, args.n)
-            print(f"Compound interest result: {result}")
-            return
-            
-        # Handle APY calculation
-        if args.rate is not None and args.days is not None:
-            result = calculate_apy(args.rate, args.days)
-            print(f"APY result: {result}")
-            return
-            
-        # Handle penalty calculation
-        if args.amount is not None and args.penalty_rate is not None:
-            result = calculate_lockup_penalty(args.amount, args.penalty_rate)
-            print(f"Penalty amount: {result}")
-            return
-            
-        print("Invalid combination of arguments. Please check your inputs.")
+    Args:
+        stake_amount: The amount being staked
+        duration_days: Duration in days
+        annual_rate: Annual interest rate
+        penalty_rate: Penalty rate for early withdrawal
         
-    except Exception as e:
-        logger.error(f"Calculation error: {e}")
-        print(f"Error: {e}")
-
-if __name__ == "__main__":
-    main()
+    Returns:
+        Dictionary containing calculated reward information
+    """
+    if stake_amount <= 0:
+        raise ValueError("Stake amount must be positive")
+    
+    if duration_days <= 0:
+        raise ValueError("Duration must be positive")
+    
+    # Calculate APY first
+    apy = calculate_apy(annual_rate, duration_days)
+    
+    # Calculate reward amount using compound interest
+    rate_per_day = annual_rate / 365
+    reward = stake_amount * (1 + rate_per_day) ** duration_days
+    
+    # Calculate penalty amount
+    penalty = calculate_penalty(reward, penalty_rate)
+    
+    return {
+        'reward': reward,
+        'penalty': penalty,
+        'apy': apy
+    }
