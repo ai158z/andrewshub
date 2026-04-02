@@ -1,2 +1,4 @@
 argparse
-decimal
+csv
+os
+pathlib
