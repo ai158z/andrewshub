@@ -1,131 +1,178 @@
 # Staking Reward Calculator
 
-A Python command-line tool for calculating staking rewards with compound interest, APY, and lockup penalties.
+A Python CLI tool for calculating staking rewards with compound interest, APY, and lockup penalties.
 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Examples](#examples)
-- [API Documentation](#api-documentation)
-- [Project Structure](#project-structure)
-- [Testing](#testing)
-- [License](#license)
-
-## Project Overview
-
-This CLI tool calculates staking rewards based on:
-- Annual Percentage Yield (APY) calculations
-- Compound interest formulas
-- Lockup period penalties
-- Input validation for all parameters
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- **APY Calculation**: Uses the formula `APY = (1 + (reward_rate * days/365))^365 - 1`
-- **Compound Interest**: Implements `A = P*(1 + r/n)^(nt)` with configurable compounding periods
-- **Lockup Penalties**: Reduces rewards for early withdrawals based on penalty percentage
-- **Input Validation**: Ensures all inputs are positive numeric values
-- **Command-Line Interface**: Easy-to-use CLI with argument parsing
-- **Comprehensive Testing**: Full unit test coverage for all calculation paths
+- Calculate Annual Percentage Yield (APY) based on stake amount and duration
+- Compute compound interest with monthly compounding
+- Apply lockup penalties for early withdrawals
+- Command-line interface for easy usage
+- Comprehensive unit testing with generated test scenarios
+- Docker support for containerized deployment
 
 ## Prerequisites
 
-- Python 3.7+
-- pip (Python package installer)
+- Python 3.7 or higher
+- pip package manager
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/your-username/staking-reward-calculator.git
-cd staking-reward-calculator
-```
+### Local Installation
 
-2. Install dependencies:
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd staking-reward-calculator
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-3. Install the package:
+### Docker Installation
+
 ```bash
-python setup.py install
+# Build the Docker image
+docker build -t staking-reward-calculator .
+
+# Run the container
+docker run staking-reward-calculator --help
 ```
+
+## Environment Variables
+
+Copy the example environment file and customize as needed:
+
+```bash
+cp .env.example .env
+```
+
+Key environment variables:
+- `DEFAULT_REWARD_RATE`: Default reward rate for calculations (default: 0.05)
+- `COMPOUNDING_PERIODS`: Number of compounding periods per year (default: 12)
 
 ## Usage
 
 ### Command Line Interface
 
 ```bash
-# Basic usage
-python src/cli.py --principal 1000 --rate 0.05 --time 365 --compound 365
-
-# With penalty parameters
-python src/cli.py --principal 1000 --rate 0.05 --time 365 --compound 365 --penalty 0.1
+python src/main.py --amount AMOUNT --duration DAYS --lockup LOCKUP_PERCENTAGE
 ```
 
-### Example Commands
+**Arguments:**
+- `--amount` or `-a`: Stake amount in USD (required)
+- `--duration` or `-d`: Staking duration in days (required)
+- `--lockup` or `-l`: Lockup penalty percentage (required)
 
+**Example:**
 ```bash
-# Calculate rewards for 1000 stake at 5% rate over 365 days
-python src/cli.py --principal 1000 --rate 0.05 --time 365
-
-# Calculate with custom penalty
-python src/cli.py --principal 1000 --rate 0.05 --time 180 --penalty 0.15
+python src/main.py --amount 10000 --duration 365 --lockup 5
 ```
 
-## API Documentation
+### Output Example
 
-### Core Functions
-
-#### `calculate_apy(principal, rate, time, compound_frequency)`
-Calculates APY using the formula: `APY = (1 + (rate * time/365))^(365) - 1`
-
-#### `calculate_compound_interest(principal, rate, time, compound)`
-Applies the compound interest formula: `A = P*(1 + r/n)^(nt)`
-
-#### `apply_penalty(amount, penalty_rate)`
-Applies lockup penalties when duration is less than minimum lockup period.
+```
+Staking Reward Calculation Results:
+--------------------------------
+Stake Amount: $10,000.00
+Duration: 365 days
+APY: 5.12%
+Gross Rewards: $512.00
+Lockup Penalty (5%): $512.00
+Net Rewards: $460.80
+Total Value: $10,460.80
+```
 
 ## Project Structure
 
 ```
 staking-reward-calculator/
 ├── src/
-│   ├── staking_calculator.py    # Core calculation logic
-│   ├── cli.py                   # Command-line interface
-│   └── __init__.py
+│   ├── main.py              # Application entry point
+│   ├── staking_calculator.py # Core calculation logic
+│   └── cli.py              # CLI parsing logic
 ├── tests/
-│   ├── test_staking_calculator.py
-│   └── test_cli.py
-├── examples/
-│   └── example_usage.py        # Example usage scripts
-├── requirements.txt             # Python dependencies
-├── setup.py                    # Installation configuration
-└── README.md                   # Documentation
+│   ├── test_calculator.py    # Unit tests
+│   ├── generate_test_data.py  # Test data generation
+│   └── test_data.csv       # Test scenarios
+├── requirements.txt         # Python dependencies
+├── Dockerfile               # Docker configuration
+├── .env.example             # Environment variables example
+└── README.md              # This file
 ```
 
 ## Testing
 
-Run the test suite:
+Run all tests:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-Or run specific tests:
+Generate new test data:
+
 ```bash
-python tests/test_staking_calculator.py
-python tests/test_cli.py
+python tests/generate_test_data.py
 ```
+
+## API Documentation
+
+### Core Functions
+
+**calculate_apy(reward_rate, days)**
+Calculates Annual Percentage Yield
+- Parameters:
+  - `reward_rate` (float): Annual reward rate (e.g., 0.05 for 5%)
+  - `days` (int): Staking duration in days
+- Returns: `float` - APY as decimal
+
+**calculate_compound_interest(principal, rate, days)**
+Calculates compound interest with monthly compounding
+- Parameters:
+  - `principal` (float): Initial stake amount
+  - `rate` (float): Annual interest rate
+  - `days` (int): Investment duration in days
+- Returns: `float` - Final amount after compounding
+
+**apply_lockup_penalty(amount, penalty_percentage)**
+Applies lockup penalty to rewards
+- Parameters:
+  - `amount` (float): Amount to apply penalty to
+  - `penalty_percentage` (float): Penalty percentage (0-100)
+- Returns: `tuple` - (penalty_amount, net_amount)
+
+## Deployment
+
+### Docker Deployment
+
+1. Build the image:
+```bash
+docker build -t staking-reward-calculator .
+```
+
+2. Run calculations:
+```bash
+docker run staking-reward-calculator --amount 5000 --duration 180 --lockup 3
+```
+
+### Production Deployment
+
+For production use, consider:
+- Setting up proper logging
+- Adding input validation for edge cases
+- Implementing configuration management
+- Setting up monitoring and alerting
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-```
 MIT License
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -143,5 +190,5 @@ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-```
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
