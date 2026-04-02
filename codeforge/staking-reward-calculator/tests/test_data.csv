@@ -1,0 +1,31 @@
+stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description
+1000,365,0.05,0.1,50.0,0.05,Standard 1-year stake
+5000,180,0.08,0.05,197.26,0.08,180-day stake at 8% rate
+10000,90,0.12,0.15,295.89,0.12,90-day stake with penalty
+25000,30,0.03,0.0,20.55,0.03,Short-term low rate
+50000,730,0.15,0.25,10958.9,0.15,Long-term high yield
+10000,365,0.1,0.1,1000.0,0.1,Standard annual stake
+2000,180,0.06,0.1,175.89,0.06,Medium-term moderate yield
+7500,90,0.04,0.0,73.97,0.04,Short-term low yield
+25000,365,0.12,0.15,1100.0,0.12,High-value annual stake
+15000,180,0.09,0.1,665.75,0.09,Medium-term high yield
+1000,30,0.05,0.05,4.11,0.05,Short-term stake with penalty
+50000,730,0.2,0.25,10958.9,0.2,Long-term very high yield
+2500,180,0.07,0.1,86.16,0.07,Medium-term variable rate
+10000,90,0.11,0.15,301.37,0.11,90-day high yield
+5000,365,0.1,0.2,500.0,0.1,Standard high yield annual
+20000,180,0.08,0.1,876.71,0.08,High-value medium-term
+7500,30,0.03,0.0,18.49,0.03,Short-term low rate stake
+30000,365,0.12,0.15,1100.0,0.12,High-value annual stake
+15000,180,0.09,0.1,665.75,0.09,Medium-term high yield
+10000,365,0.12,0.15,1800.0,0.12,Standard annual with penalty
+25000,90,0.05,0.1,308.22,0.05,Short-term moderate rate
+5000,180,0.07,0.05,171.23,0.07,Medium-term stake
+10000,730,0.18,0.25,1800.0,0.18,Long-term very high yield
+50000,90,0.06,0.1,895.89,0.06,Medium-term moderate yield
+20000,30,0.03,0.0,49.32,0.03,Short-term stake
+7500,365,0.15,0.2,1125.0,0.15,Standard annual rate
+30000,180,0.12,0.15,706.85,0.12,High-value annual stake
+10000,730,0.2,0.25,4000.0,0.2,Long-term high value
+2500,90,0.04,0.05,246.6,0.04,Short-term low yield
+50000,30,0.06,0.1,895.89,0.06,Short-term high value
