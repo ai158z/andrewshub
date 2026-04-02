@@ -1,4 +1,1 @@
-argparse
-csv
-os
-pathlib
+pytest
