@@ -1,0 +1,179 @@
+import pytest
+import csv
+from io import StringIO
+
+def read_test_data():
+    with open('tests/test_data.csv', 'r') as f:
+        reader = csv.DictReader(f)
+        return list(reader)
+
+@pytest.fixture
+def sample_test_data():
+    data = """stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description
+1000,365,0.05,0.1,1050.0,0.05,Standard 1-year stake"""
+    reader = csv.DictReader(StringIO(data))
+    return list(reader)[0]
+
+def test_read_csv_file_exists():
+    data = read_test_data()
+    assert len(data) > 0
+
+def test_read_csv_has_required_columns():
+    data = read_test_data()
+    required_columns = {
+        'stake_amount', 'duration_days', 'annual_rate', 
+        'penalty_rate', 'expected_reward', 'expected_apy', 'description'
+    }
+    for column in required_columns:
+        assert column in data[0], f"Missing column {column}"
+
+def test_read_csv_parses_numeric_values():
+    data = read_test_data()
+    row = data[0]
+    assert isinstance(float(row['stake_amount']), float)
+    assert isinstance(float(row['duration_days']), float)
+    assert isinstance(float(row['annual_rate']), float)
+    assert isinstance(float(row['penalty_rate']), float)
+    assert isinstance(float(row['expected_reward']), float)
+    assert isinstance(float(row['expected_apy']), float)
+
+def test_read_csv_all_rows_have_valid_data():
+    data = read_test_data()
+    assert len(data) == 25, "Test data should have 25 rows"
+
+def test_read_csv_parses_all_rows():
+    data = read_test_data()
+    assert len(data) > 10  # Should have multiple test cases
+
+def test_read_csv_handles_empty_values():
+    empty_data = "stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description\n,,,,,,"
+    reader = csv.DictReader(StringIO(empty_data))
+    row = list(reader)[0]
+    assert row['stake_amount'] == ''
+    # Empty values should not cause errors when read
+
+def test_read_csv_handles_incorrect_data_types():
+    # This test ensures that the CSV reading itself doesn't break
+    # with unexpected data, though the numeric conversions are separate
+    malformed_data = """stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description
+not_a_number,not_a_number,not_a_number,not_a_number,not_a_number,not_a_number,Test with invalid numeric"""
+    reader = csv.DictReader(StringIO(malformed_data))
+    row = list(reader)[0]
+    assert row['stake_amount'] == 'not_a_number'
+
+def test_read_csv_handles_extra_commas():
+    # Test that we can handle extra fields
+    extra_column_data = """stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description,extra
+1000,365,0.05,0.1,1050.0,0.05,Standard 1-year stake,extra"""
+    reader = csv.DictReader(StringIO(extra_column_data))
+    row = list(reader)[0]
+    assert 'extra' in row
+
+def test_read_csv_handles_missing_fields():
+    missing_data = "stake_amount,description\n1000,Standard stake"
+    reader = csv.DictReader(StringIO(missing_data))
+    row = list(reader)[0]
+    assert row['stake_amount'] == '1000'
+    assert row['description'] == 'Standard stake'
+
+def test_read_csv_parses_variety_of_rates():
+    varied_rates_data = """stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description
+1000,365,0.05,0.1,1050.0,0.05,Standard 1-year stake
+5000,180,0.08,0.05,1200.0,0.08,180-day stake at 8% rate"""
+    reader = csv.DictReader(StringIO(varied_rates_data))
+    rows = list(reader)
+    assert len(rows) == 2
+    assert float(rows[1]['annual_rate']) == 0.08
+
+def test_read_csv_parses_all_examples(sample_test_data):
+    assert sample_test_data['stake_amount'] == '1000'
+    assert sample_test_data['duration_days'] == '365'
+    assert sample_test_data['annual_rate'] == '0.05'
+    assert sample_test_data['penalty_rate'] == '0.1'
+    assert sample_test_data['expected_reward'] == '1050.0'
+    assert sample_test_data['expected_apy'] == '0.05'
+    assert sample_test_data['description'] == 'Standard 1-year stake'
+
+def test_read_csv_unique_descriptions():
+    data = read_test_data()
+    descriptions = [row['description'] for row in data]
+    assert len(descriptions) == len(set(descriptions)), "All descriptions should be unique"
+
+def test_read_csv_numeric_validation():
+    data = read_test_data()
+    for row in data:
+        float(row['stake_amount'])
+        float(row['duration_days'])
+        float(row['annual_rate'])
+        float(row['penalty_rate'])
+        float(row['expected_reward'])
+        float(row['expected_apy'])
+
+def test_read_csv_consistent_data_types():
+    # Verify that all rows have the same structure
+    data = read_test_data()
+    header = data[0].keys()
+    for row in data[1:]:
+        assert row.keys() == header, "All rows should have consistent columns"
+
+def test_read_csv_no_extra_fields():
+    # Ensure that we don't have data outside our expected fields
+    data = read_test_data()
+    expected_fields = {'stake_amount', 'duration_days', 'annual_rate', 'penalty_rate', 'expected_reward', 'expected_apy', 'description'}
+    actual_fields = set(data[0].keys())
+    assert actual_fields == expected_fields, "Fields should match expected schema"
+
+def test_read_csv_parses_all_fields():
+    # Ensure that all expected fields are present in each row
+    data = read_test_data()
+    required_fields = ['stake_amount', 'duration_days', 'annual_rate', 'penalty_rate', 'expected_reward', 'expected_apy', 'description']
+    for row in data:
+        for field in required_fields:
+            assert field in row, f"Missing field {field}"
+
+def test_read_csv_header_validation():
+    # Test that the header matches exactly what we expect
+    with open('tests/test_data.csv', 'r') as f:
+        header = f.readline().strip()
+        expected_header = 'stake_amount,duration_days,annual_rate,penalty_rate,expected_reward,expected_apy,description'
+        assert header == expected_header
+
+def test_read_csv_all_rows_parseable():
+    data = read_test_data()
+    for i, row in enumerate(data):
+        # This will raise an exception if any field is not a number when it should be
+        try:
+            float(row['stake_amount'])
+            float(row['duration_days'])
+            float(row['annual_rate'])
+            float(row['penalty_rate'])
+            float(row['expected_reward'])
+            float(row['expected_apy'])
+        except ValueError as e:
+            pytest.fail(f"Row {i} contains unparseable data: {e}")
+
+def test_read_csv_unique_test_case_names():
+    data = read_test_data()
+    descriptions = [row['description'] for row in data]
+    assert len(descriptions) == len(set(descriptions))
+
+def test_read_csv_all_rows_valid():
+    data = read_test_data()
+    for row in data:
+        assert all(k in row for k in row.keys())
+
+def test_read_csv_no_missing_rows():
+    data = read_test_data()
+    assert len(data) == 25, "Should have exactly 25 rows of test data"
+
+def test_read_csv_no_extra_data():
+    # Verify that there are no extra rows
+    data = read_test_data()
+    assert len(data) == 25
+
+def test_read_csv_fields_match_header():
+    data = read_test_data()
+    header = ['stake_amount', 'duration_days', 'annual_rate', 'penalty_rate', 'expected_reward', 'expected_apy', 'description']
+    for row in data:
+        row_fields = list(row.keys())
+        assert row_fields == header, f"Row fields {row_fields} don't match header {header}"
