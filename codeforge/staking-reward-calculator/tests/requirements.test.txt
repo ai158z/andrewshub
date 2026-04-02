@@ -1,146 +1,127 @@
 import pytest
+from pathlib import Path
+import os
 import argparse
-from decimal import Decimal
 from unittest.mock import patch, mock_open
+import sys
+from io import StringIO
+import csv
+import logging
+from decimal import Decimal
 
-def test_requirements_file_exists():
-    """Test that requirements file exists and is readable"""
-    with open('requirements.txt', 'r') as f:
-        requirements = f.read()
-    assert isinstance(requirements, str)
-    assert len(requirements) > 0
+def test_argparse_version():
+    """Test that argparse version matches expected version"""
+    assert argparse.__version__ == "1.4.0"
 
-def test_parse_requirements_file():
-    """Test parsing of requirements file content"""
-    with patch('builtins.open', mock_open(read_data='argparse\npytest\ndecimal')) as mock_file:
-        with open('requirements.txt', 'r') as f:
-            content = f.read()
-        assert 'argparse' in content
+def test_csv_module_import():
+    """Test that csv module is available"""
+    assert csv is not None
+
+def test_os_module_import():
+    """Test that os module is available"""
+    assert os is not None
+
+def test_pathlib_version():
+    """Test that pathlib version matches expected version"""
+    import pathlib
+    assert pathlib.__version__ == "1.0.1"
+
+def test_pytest_version():
+    """Test that pytest version matches expected version"""
+    assert pytest.__version__ == "7.4.3"
+
+def test_python_dotenv_version():
+    """Test python-dotenv version"""
+    import dotenv
+    assert dotenv.__version__ == "1.0.0"
+
+def test_logging_module_import():
+    """Test that logging module is available"""
+    assert logging is not None
 
 def test_decimal_module_import():
     """Test that decimal module is available"""
-    import decimal
-    assert decimal.Decimal is not None
+    assert Decimal is not None
 
-def test_argparse_module_import():
-    """Test that argparse module is available"""
-    import argparse
-    assert argparse.ArgumentParser is not None
+def test_typing_module_import():
+    """Test that typing module is available"""
+    import typing
+    assert typing is not None
 
-def test_pytest_module_import():
-    """Test that pytest module is available"""
-    import pytest
-    # This is a basic test - in reality, pytest import is tested by running tests
-    assert pytest is not None
+def test_requirements_file_exists():
+    """Test that requirements file exists"""
+    assert Path("requirements.txt").exists()
 
-def test_setuptools_module_import():
-    """Test that setuptools module is available"""
-    import setuptools
-    assert setuptools is not None
+@patch("builtins.open", new_callable=mock_open, read_data="argparse==1.4.0\ncsv==1.0")
+def test_requirements_file_content(mock_file):
+    """Test reading requirements file content"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+    assert "argparse==1.4.0" in content
 
-def test_decimal_operations():
-    """Test basic decimal operations work correctly"""
-    from decimal import Decimal
-    d1 = Decimal('10.0')
-    d2 = Decimal('5.0')
-    assert d1 + d2 == Decimal('15.0')
+def test_pathlib_path_creation():
+    """Test pathlib Path object creation"""
+    test_path = Path("test_file.txt")
+    assert isinstance(test_path, Path)
 
-def test_argparse_functionality():
-    """Test that argparse works for basic argument parsing"""
-    import sys
+def test_argparse_creation():
+    """Test argparse module can create parsers"""
     parser = argparse.ArgumentParser()
-    parser.add_argument('--test', type=str)
-    args = parser.parse_args(['--test', 'value'])
-    assert args.test == 'value'
+    assert isinstance(parser, argparse.ArgumentParser)
+
+def test_csv_reader_creation():
+    """Test CSV reader creation"""
+    content = "name,age\nJohn,25\nJane,30"
+    reader = csv.reader(content.splitlines())
+    rows = list(reader)
+    assert len(rows) == 3  # header + 2 data rows
+
+def test_os_path_operations():
+    """Test basic OS path operations"""
+    current_dir = os.getcwd()
+    assert isinstance(current_dir, str)
 
 def test_decimal_precision():
-    """Test decimal precision handling"""
-    from decimal import Decimal, getcontext
-    getcontext().prec = 28
-    result = Decimal('1') / Decimal('3')
-    assert len(str(result)) > 0
+    """Test decimal operations"""
+    d1 = Decimal('0.1')
+    d2 = Decimal('0.2')
+    result = d1 + d2
+    assert result == Decimal('0.3')
 
-def test_file_reading():
-    """Test reading requirements file content"""
-    with patch('builtins.open', mock_open(read_data='argparse\npytest\ndecimal')):
-        with open('requirements.txt', 'r') as f:
-            content = f.read()
-            lines = content.strip().split('\n')
-            assert 'argparse' in lines
-            assert 'pytest' in lines
-            assert 'decimal' in lines
+def test_environment_variables():
+    """Test environment variable handling"""
+    os.environ['TEST_VAR'] = 'test_value'
+    assert os.environ.get('TEST_VAR') == 'test_value'
 
-def test_requirements_parsing():
-    """Test parsing requirements into list"""
-    test_content = "argparse\npytest\ndecimal"
-    requirements = test_content.split('\n')
-    assert len(requirements) == 3
-    assert 'argparse' in requirements
-    assert 'pytest' in requirements
-    assert 'decimal' in [req.strip() for req in requirements]
+def test_logging_basic_config():
+    """Test basic logging configuration"""
+    log_stream = StringIO()
+    handler = logging.StreamHandler(log_stream)
+    logger = logging.getLogger('test')
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
+    logger.info("Test message")
+    assert "Test message" in log_stream.getvalue()
 
-def test_decimal_context():
-    """Test decimal context operations"""
-    from decimal import Decimal, getcontext
-    context = getcontext()
-    assert context is not None
+def test_pathlib_operations():
+    """Test pathlib path operations"""
+    path = Path(".")
+    assert path.exists()
+    assert path.is_dir()
 
-def test_decimal_rounding():
-    """Test decimal rounding behavior"""
-    from decimal import Decimal, ROUND_HALF_UP
-    d = Decimal('1.23456')
-    rounded = d.quantize(Decimal('1.00'), rounding=ROUND_HALF_UP)
-    assert str(rounded) == '1.23' or str(rounded) == '1.24'
-
-def test_argparse_subparser():
-    """Test argparse subparser functionality"""
+def test_argparse_argument_parsing():
+    """Test argparse argument parsing"""
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers()
-    subparser = subparsers.add_parser('test')
-    assert subparser is not None
+    parser.add_argument('--test', help='Test argument')
+    with patch('sys.argv', ['test', '--test', 'value']):
+        args = parser.parse_args()
+        assert args.test == 'value'
 
-def test_module_import_error():
-    """Test handling of import errors"""
-    try:
-        import non_existent_module
-    except ImportError as e:
-        assert "No module named 'non_existent_module'" in str(e)
-
-def test_decimal_precision_context():
-    """Test decimal precision context"""
-    from decimal import Decimal, getcontext
-    orig_prec = getcontext().prec
-    getcontext().prec = 5
-    result = Decimal('1') / Decimal('3')
-    getcontext().prec = orig_prec
-    assert result > 0
-
-def test_file_content_parsing():
-    """Test that file content is properly parsed"""
-    mock_content = "argparse\npytest\ndecimal\n"
-    lines = mock_content.strip().split('\n')
-    assert len(lines) == 3
-    assert lines[0] == 'argparse'
-    assert lines[1] == 'pytest'
-    assert lines[2] == 'decimal'
-
-def test_requirements_list_generation():
-    """Test generating requirements list"""
-    requirements = ['argparse', 'pytest', 'decimal']
-    assert 'argparse' in requirements
-    assert 'pytest' in requirements
-    assert 'decimal' in requirements
-
-def test_decimal_arithmetic():
-    """Test decimal arithmetic operations"""
-    from decimal import Decimal
-    a = Decimal('10')
-    b = Decimal('3')
-    result = a + b
-    assert result == Decimal('13')
-
-def test_decimal_formatting():
-    """Test decimal formatting"""
-    from decimal import Decimal
-    d = Decimal('1.234')
-    assert f"{d:.2f}" == '1.23' or f"{d:.2f}" == '1.24'
+def test_csv_dict_reader():
+    """Test CSV DictReader functionality"""
+    data = "name,age\nJohn,25"
+    reader = csv.DictReader(data.splitlines())
+    rows = list(reader)
+    assert len(rows) == 1
+    assert rows[0]['name'] == 'John'
+    assert rows[0]['age'] == '25'
