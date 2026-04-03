@@ -1,242 +1,205 @@
-import argparse
+import pytest
 from unittest.mock import patch, MagicMock
+import argparse
 import sys
 from io import StringIO
 
-# Mock the actual modules for testing
-sys.path.insert(0, 'src')
-from cli import main as cli_main
-from staking_calculator import validate_inputs
+from src.cli import parse_args, run_calculations
+from src.staking_calculator import calculate_apy, calculate_compound_interest
+from src.validator import validate_principal, validate_apr
+from src.types import to_float, to_int
 
 
-def test_main_function_exists():
-    """Test that the main function exists and is callable"""
-    assert callable(cli_main), "main function should be callable"
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '1000', '--rate', '0.05', '--days', '365'])
-@patch('sys.stdout', new_callable=StringIO)
-@patch('sys.stderr', new_callable=StringIO)
-def test_argument_parsing_valid_args(mock_stderr, mock_stdout):
-    """Test that command line arguments are parsed correctly with valid inputs"""
-    try:
-        cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit after parsing
-    output = mock_stdout.getvalue()
-    assert "--help" not in output and "-h" not in output
-
-
-@patch('sys.argv', ['staking_calculator'])
-@patch('sys.stdout', new_callable=StringIO)
-def test_argument_parsing_missing_args(mock_stdout):
-    """Test that help is displayed when no arguments are provided"""
-    try:
-        with patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass
-    output = mock_stdout.getvalue()
-    assert "--help" in output or "-h" in output, "Expected help message to be displayed"
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', 'invalid', '--rate', '0.05', '--days', '365'])
-@patch('sys.stdout', new_callable=StringIO)
-def test_argument_parsing_invalid_args(mock_stdout):
-    """Test that invalid argument types are handled correctly"""
-    try:
-        with patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass
-    output = mock_stdout.getvalue()
-    assert "--help" not in output and "-h" not in output
-
-
-def test_validate_inputs_with_valid_data():
-    """Test that validate_inputs works correctly with valid inputs"""
-    try:
-        validate_inputs(1000, 0.05, 365)
-    except ValueError as e:
-
-        assert False, f"validate_inputs should not raise an error for valid inputs: {e}"
-
-
-def test_validate_inputs_negative_principal():
-    """Test that validate_inputs raises ValueError for negative principal"""
-    try:
-        validate_inputs(-1000, 0.05, 365)
-        assert False, "Expected ValueError for negative principal"
-    except ValueError:
-        pass  # Expected
-
-
-def test_validate_inputs_negative_rate():
-    """Test that validate_inputs raises ValueError for negative rate"""
-    try:
-        validate_inputs(1000, -0.05, 365)
-        assert False, "Expected ValueError for negative rate"
-    except ValueError:
-        pass  # Expected
-
-
-def test_validate_inputs_negative_days():
-    """Test that validate_inputs raises ValueError for negative days"""
-    try:
-        validate_inputs(1000, 0.05, -365)
-        assert False, "Expected ValueError for negative days"
-    except ValueError:
-        pass  # Expected
-
-
-def test_validate_inputs_invalid_principal_type():
-    """Test that validate_inputs raises ValueError for invalid principal type"""
-    try:
-        validate_inputs("invalid", 0.05, 365)
-        assert False, "Expected ValueError for invalid principal type"
-    except ValueError:
-        pass  # Expected
-
-
-def test_validate_inputs_invalid_rate_type():
-    """Test that validate_inputs raises ValueError for invalid rate type"""
-    try:
-        validate_inputs(1000, "invalid", 365)
-        assert False, "Expected ValueError for invalid rate type"
-    except ValueError:
-        pass  # Expected
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '1000', '--rate', '0.05', '--days', '365'])
-def test_main_with_valid_cli_args():
-    """Test that main function runs without error when given valid arguments"""
-    try:
-        with patch('sys.stdout', new_callable=StringIO), \
-             patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit after parsing
-
-
-@patch('sys.argv', ['staking_calculator'])
-def test_main_with_no_args():
-    """Test that main function shows help when no arguments are provided"""
-    try:
-        with patch('sys.stdout', new_callable=StringIO), \
-             patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit when no args
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', 'invalid', '--rate', '0.05', '--days', '365'])
-def test_main_with_invalid_args():
-    """Test that main function handles invalid arguments gracefully"""
-    try:
-        with patch('sys.stdout', new_callable=StringIO), \
-             patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit on error
-
-
-def test_validate_inputs_zero_values():
-    """Test that validate_inputs handles zero values correctly"""
-    try:
-        validate_inputs(0, 0.0, 0)
-        assert False, "Expected ValueError for zero values"
-    except ValueError:
-        pass  # Expected for zero principal or rate or days
-
-
-def test_validate_inputs_valid_zero_rate():
-    """Test that validate_inputs accepts zero interest rate"""
-    try:
-        validate_inputs(1000, 0.0, 365)
-    except ValueError:
-        assert False, "Zero interest rate should be valid"
-
-
-def test_validate_inputs_valid_edge_cases():
-    """Test that validate_inputs handles edge case values"""
-    try:
-        validate_inputs(1, 0.0001, 1)  # Minimal positive values
-    except ValueError:
-        assert False, "Minimal positive values should be valid"
-
-
-def test_validate_inputs_large_values():
-    """Test that validate_inputs handles large values"""
-    try:
-        validate_inputs(1000000, 1.0, 3650)  # Large values
-    except ValueError:
-        assert False, "Large values should be valid"
-
-
-def test_validate_inputs_negative_rate_and_principal():
-    """Test that validate_inputs rejects negative rate and principal"""
-    try:
-        validate_inputs(-1000, -0.05, 365)
-        assert False, "Expected ValueError for negative values"
-    except ValueError:
-        pass  # Expected
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '0', '--rate', '0', '--days', '1'])
-def test_main_with_zero_inputs():
-    """Test that main function handles zero inputs"""
-    try:
-        with patch('sys.stdout', new_callable=StringIO), \
-             patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit after parsing or on error
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '1000000', '--rate', '1.0', '--days', '3650'])
-def test_main_with_large_inputs():
-    """Test that main function handles large inputs"""
-    try:
-        with patch('sys.stdout', new_callable=StringIO), \
-             patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit after parsing
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '1000', '--rate', '0.05', '--days', '365'])
-@patch('sys.stdout', new_callable=StringIO)
-@patch('sys.stderr', new_callable=StringIO)
-def test_main_output_format(mock_stderr, mock_stdout):
-    """Test that the output is correctly formatted"""
-    try:
-        cli_main()
-    except SystemExit:
-        pass
-    # We're not checking the actual output here, just ensuring it doesn't crash
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '1000', '--rate', '0.05', '--days', '365'])
-def test_main_consistent_behavior():
-    """Test that main function behaves consistently with the same inputs"""
-    try:
-        with patch('sys.stdout', new_callable=StringIO), \
-             patch('sys.stderr', new_callable=StringIO):
-            cli_main()
-    except SystemExit:
-        pass  # argparse calls sys.exit after parsing
-    # Test passes if no exception is thrown inconsistently
-
-
-@patch('sys.argv', ['staking_calculator', '--principal', '1000', '--rate', '0.05', '--days', '365'])
-def test_argument_parser_structure():
-    """Test that argument parser has the expected structure"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--principal', type=float, required=True)
-    parser.add_argument('--rate', type=float, required=True)
-    parser.add_argument('--days', type=int, required=True)
+def test_parse_args_valid():
+    test_args = [
+        'staking-reward-calculator',
+        '--principal', '1000',
+        '--apr', '0.05',
+        '--time', '365'
+    ]
     
-    args = parser.parse_args(['--principal', '1000', '--rate', '0.05', '--days', '365'])
-    assert args.principal == 1000
-    assert args.rate == 0.05
-    assert args.days == 365
+    with patch('sys.argv', test_args):
+        args = parse_args()
+        assert args.principal == '1000'
+        assert args.apr == '0.05'
+        assert args.time == '365'
+
+
+def test_parse_args_help(capsys):
+    with patch('sys.argv', ['staking-reward-calculator', '--help']), \
+         pytest.raises(SystemExit) as exc_info:
+        parse_args()
+    
+    assert exc_info.value.code == 0
+    captured = capsys.readouterr()
+    assert 'usage:' in captured.out
+
+
+def test_parse_args_version(capsys):
+    with patch('sys.argv', ['staking-reward-calculator', '--version']), \
+         pytest.raises(SystemExit) as exc_info:
+        parse_args()
+    
+    assert exc_info.value.code == 0
+
+
+def test_parse_args_invalid():
+    with patch('sys.argv', ['staking-reward-calculator', '--invalid']), \
+         pytest.raises(SystemExit) as exc_info:
+        parse_args()
+    
+    assert exc_info.value.code == 2
+
+
+def test_validate_principal_valid():
+    assert validate_principal("1000") is True
+    assert validate_principal("0.01") is True
+
+
+def test_validate_principal_invalid():
+    with pytest.raises(ValueError):
+        validate_principal("invalid")
+    
+    with pytest.raises(ValueError):
+        validate_principal("-100")
+
+
+def test_validate_apr_valid():
+    assert validate_apr("0.05") is True
+    assert validate_apr("0.0001") is True
+
+
+def test_validate_apr_invalid():
+    with pytest.raises(ValueError):
+        validate_apr("invalid")
+    
+    with pytest.raises(ValueError):
+        validate_apr("1.5")
+
+
+def test_calculate_compound_interest():
+    principal = 1000
+    rate = 0.05
+    time = 1
+    compound_frequency = 365
+    
+    result = calculate_compound_interest(principal, rate, time, compound_frequency)
+    expected = principal * (1 + rate / compound_frequency) ** (compound_frequency * time)
+    
+    assert abs(result - expected) < 1e-10
+
+
+def test_calculate_apy():
+    rate = 0.05
+    compound_frequency = 365
+    
+    apy = calculate_apy(rate, compound_frequency)
+    expected_apy = (1 + rate) ** compound_frequency - 1
+    
+    assert abs(apy - expected_apy) < 1e-10
+
+
+def test_to_float():
+    assert to_float("0.05") == 0.05
+    assert to_float("1000") == 1000.0
+    
+    with pytest.raises(ValueError):
+        to_float("invalid")
+
+
+def test_to_int():
+    assert to_int("365") == 365
+    assert to_int("1") == 1
+    
+    with pytest.raises(ValueError):
+        to_int("invalid")
+
+
+def test_run_calculations_basic(capsys):
+    args = argparse.Namespace(principal='1000', apr='0.05', time='365')
+    run_calculations(args)
+    
+    captured = capsys.readouterr()
+    assert "Principal: 1000" in captured.out
+    assert "APR: 5.0%" in captured.out
+
+
+def test_run_calculations_edge_case(capsys):
+    args = argparse.Namespace(principal='0.01', apr='0.0001', time='1')
+    run_calculations(args)
+    
+    captured = capsys.readouterr()
+    assert "Principal: 0.01" in captured.out
+
+
+@patch('sys.stdout', new_callable=StringIO)
+def test_full_cli_workflow(mock_stdout):
+    test_args = [
+        'staking-reward-calculator',
+        '--principal', '1000',
+        '--apr', '0.05',
+        '--time', '365'
+    ]
+    
+    with patch('sys.argv', test_args):
+        args = parse_args()
+        run_calculations(args)
+        
+        output = mock_stdout.getvalue()
+        assert "Principal: 1000" in output
+        assert "APR: 5.0%" in output
+
+
+def test_consistency_check():
+    # Test that the same input always produces the same output
+    principal = 1000
+    rate = 0.05
+    time = 1
+    compound_frequency = 365
+    
+    result1 = calculate_compound_interest(principal, rate, time, compound_frequency)
+    result2 = calculate_compound_interest(principal, rate, time, compound_frequency)
+    
+    assert result1 == result2
+
+
+def test_output_formatting(capsys):
+    args = argparse.Namespace(principal='1000', apr='0.05', time='365')
+    run_calculations(args)
+    
+    captured = capsys.readouterr()
+    output_lines = captured.out.strip().split('\n')
+    
+    assert len(output_lines) >= 3  # At least 3 lines of output
+    assert any("Reward:" in line for line in output_lines)
+    assert any("APY:" in line for line in output_lines)
+
+
+def test_help_output_content(capsys):
+    with patch('sys.argv', ['staking-reward-calculator', '--help']), \
+         pytest.raises(SystemExit):
+        parse_args()
+    
+    captured = capsys.readouterr()
+    assert '--principal' in captured.out
+    assert '--apr' in captured.out
+    assert '--time' in captured.out
+
+
+def test_version_output_content(capsys):
+    with patch('sys.argv', ['staking-reward-calculator', '--version']), \
+         pytest.raises(SystemExit):
+        parse_args()
+    
+    captured = capsys.readouterr()
+    assert 'staking-reward-calculator' in captured.out.lower()
+
+
+def test_compound_interest_edge_cases():
+    # Test with zero values
+    assert calculate_compound_interest(0, 0.05, 1, 365) == 0
+    assert calculate_compound_interest(1000, 0, 1, 365) == 1000
+    
+    # Test with extreme values
+    result = calculate_compound_interest(1000, 0.0001, 1, 1)
+    assert result > 1000  # Should be slightly more than principal due to compounding
