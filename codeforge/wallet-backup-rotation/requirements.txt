@@ -1,0 +1,6 @@
+cryptography
+requests
+schedule
+python-crontab
+pyyaml
+click
