@@ -1,0 +1,166 @@
+import pytest
+from unittest.mock import mock_open, patch
+import requirements
+
+def test_parse_requirements_txt():
+    """Test parsing a requirements.txt file"""
+    content = "Flask==2.3.3\nredis==4.6.0\npytest==7.4.2"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 3
+        assert reqs[0].name == "Flask"
+        assert reqs[0].specifier == "==2.3.3"
+        assert reqs[1].name == "redis"
+        assert reqs[1].specifier == "==4.6.0"
+        assert reqs[2].name == "pytest"
+        assert reqs[2].specifier == "==7.4.2"
+
+def test_parse_empty_requirements():
+    """Test parsing an empty requirements file"""
+    content = ""
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 0
+
+def test_parse_requirements_with_comments():
+    """Test parsing requirements with comments"""
+    content = "# This is a comment\nFlask==2.3.3  # web framework\nredis>=4.6.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+        assert reqs[0].name == "Flask"
+        assert reqs[1].name == "redis"
+
+def test_parse_requirements_with_whitespace():
+    """Test parsing requirements with extra whitespace"""
+    content = "\nFlask==2.3.3\n  \nredis==4.6.0\n\n"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_malformed():
+    """Test parsing malformed requirements"""
+    content = "invalid===\nname without version"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 0
+
+def test_parse_requirements_nonexistent_file():
+    """Test parsing a nonexistent file"""
+    with pytest.raises(FileNotFoundError):
+        requirements.parse_requirements('nonexistent.txt')
+
+def test_parse_requirements_no_version():
+    """Test parsing requirements without versions"""
+    content = "Flask\nredis"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+        assert reqs[0].name == "Flask"
+        assert reqs[1].name == "redis"
+
+def test_parse_requirements_various_operators():
+    """Test parsing requirements with different version operators"""
+    content = "Flask>=2.3.3\nredis<=4.6.0\npytest!=7.4.2"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 3
+        assert reqs[0].name == "Flask"
+        assert reqs[1].name == "redis"
+        assert reqs[2].name == "pytest"
+
+def test_parse_requirements_with_extras():
+    """Test parsing requirements with extras"""
+    content = "Flask[async]==2.3.3\nredis[ssl]>=4.6.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+        assert reqs[0].name == "Flask"
+        assert reqs[1].name == "redis"
+
+def test_parse_requirements_with_urls():
+    """Test parsing requirements with URLs"""
+    content = "git+https://github.com/user/repo@v1.0#egg=package"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 1
+
+def test_parse_requirements_duplicate_entries():
+    """Test parsing duplicate requirements"""
+    content = "Flask==2.3.3\nFlask==2.3.3"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+        assert reqs[0].name == "Flask"
+        assert reqs[1].name == "Flask"
+
+def test_parse_requirements_case_sensitivity():
+    """Test case sensitivity in requirement names"""
+    content = "flask==2.3.3\nFLASK==2.3.3"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_special_characters():
+    """Test parsing requirements with special characters in names"""
+    content = "django-filter==2.4.0\ndjango_rest_framework==3.12.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_numeric_versions():
+    """Test parsing requirements with purely numeric package names"""
+    content = "123==1.0\n456>=2.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_with_hyphens():
+    """Test parsing requirements with hyphens in names"""
+    content = "python-package==1.0\nmy-framework>=2.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_with_underscores():
+    """Test parsing requirements with underscores in names"""
+    content = "python_package==1.0\nmy_framework>=2.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_with_dots():
+    """Test parsing requirements with dots in names"""
+    content = "python.package==1.0\nmy.framework>=2.0"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_with_markers():
+    """Test parsing requirements with environment markers"""
+    content = "Flask==2.3.3; python_version>='3.6'\nredis==4.6.0; sys_platform=='win32'"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 2
+
+def test_parse_requirements_complex_markers():
+    """Test parsing requirements with complex environment markers"""
+    content = "numpy==1.24.0; python_version>='3.8' and platform_system=='Linux'"
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        assert len(reqs) == 1
+        assert reqs[0].name == "numpy"
+
+def test_parse_requirements_multiple_lines():
+    """Test parsing multiple complex requirement lines"""
+    content = """
+    Flask==2.3.3
+    redis>=4.6.0
+    pytest!=7.4.2
+    # Comment here
+    django; python_version>='3.6'
+    """
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = requirements.parse_requirements('requirements.txt')
+        # Should find 3 valid requirements plus 1 with marker
+        assert len(reqs) >= 3
