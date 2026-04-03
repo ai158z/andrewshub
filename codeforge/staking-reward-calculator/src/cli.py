@@ -1,101 +1,95 @@
 import argparse
-import logging
 import sys
-from typing import NoReturn
-from src.staking_calculator import calculate_staking_reward
+import logging
+from typing import Union
+import os
 
-def parse_args() -> argparse.Namespace:
-    """Parse command line arguments."""
+from src.staking_calculator import calculate_apy, calculate_compound_interest, calculate_lockup_penalty
+from src.validator import validate_principal, validate_apr, convert_input
+from src.types import to_float, to_int
+
+def parse_args():
     parser = argparse.ArgumentParser(
-        description="Staking Reward Calculator",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+        description="Staking reward calculator for estimating staking returns"
     )
     
     parser.add_argument(
-        "--stake_amount",
-        type=float,
+        "--principal",
+        type=to_float,
         required=True,
-        help="The amount to stake"
+        help="Principal amount to stake"
+    )
+    
+    parser.add_argument(
+        "--apr",
+        type=to_float,
+        required=True,
+        help="Annual Percentage Rate (APR) as a decimal (e.g., 0.05 for 5%)"
     )
     
     parser.add_argument(
         "--duration",
-        type=int,
+        type=to_int,
         required=True,
-        help="Staking duration in days"
+        help="Duration in days"
     )
     
     parser.add_argument(
-        "--lockup_percent",
-        type=float,
+        "--compound-frequency",
+        type=to_int,
+        default=365,
+        help="Compound frequency per year (default: 365)"
+    )
+    
+    parser.add_argument(
+        "--lockup-penalty",
+        type=to_float,
         default=0.0,
-        help="Lockup percentage for early withdrawal penalty"
+        help="Penalty rate for early withdrawal (default: 0.0)"
     )
     
-    parser.add_argument(
-        "--annual_rate",
-        type=float,
-        default=0.08,
-        help="Annual percentage yield rate"
-    )
-    
-    parser.add_argument(
-        "--penalty_rate",
-        type=float,
-        default=0.02,
-        help="Penalty rate for early withdrawal"
-    )
-    
-    return parser.parse_args()
+    return parser
 
-def run_calculator(stake_amount: float, duration: int, lockup_percent: float) -> None:
-    """Run the staking reward calculation with provided parameters."""
-    try:
-        if stake_amount <= 0:
-            raise ValueError("Stake amount must be positive")
-        
-        if duration <= 0:
-            raise ValueError("Duration must be positive")
-            
-        if lockup_percent < 0 or lockup_percent > 100:
-            raise ValueError("Lockup percent must be between 0 and 100")
-            
-        # Default values for calculation
-        annual_rate = 0.08
-        penalty_rate = 0.02
-        
-        # Calculate the staking reward
-        reward = calculate_staking_reward(
-            stake_amount, 
-            duration, 
-            annual_rate, 
-            penalty_rate
-        )
-        
-        # Display results
-        print(f"Staking Calculation Results:")
-        print(f"Stake Amount: ${stake_amount:,.2f}")
-        print(f"Duration: {duration} days")
-        print(f"Annual Rate: {annual_rate*100:.2f}%")
-        print(f"Penalty Rate: {penalty_rate*100:.2f}%")
-        print(f"Estimated Reward: ${reward:,.2f}")
-        
-    except Exception as e:
-        logging.error(f"Calculation error: {str(e)}")
-        print(f"Error calculating reward: {str(e)}")
+def run_calculations(args):
+    # Validate inputs
+    validate_principal(args.principal)
+    validate_apr(args.apr)
+    
+    # Calculate APY
+    apy = calculate_apy(args.apr, args.compound_frequency)
+    
+    # Calculate final amount with compound interest
+    final_amount = calculate_compound_interest(
+        args.principal,
+        args.apr,
+        args.duration / 365.0,
+        args.compound_frequency
+    )
+    
+    # Calculate penalty if any
+    penalty_amount = 0
+    if args.lockup_penalty > 0:
+        penalty_amount = calculate_lockup_penalty(args.principal, args.lockup_penalty)
+    
+    # Calculate final rewards
+    reward = final_amount - args.principal - penalty_amount
+    
+    return {
+        'apy': apy,
+        'final_amount': final_amount,
+        'penalty': penalty_amount,
+        'reward': reward
+    }
 
-def main() -> NoReturn:
-    """Main entry point for the CLI."""
+if __name__ == "__main__":
+    # Set up argument parsing for command line usage
+    args = parse_args()
     try:
-        args = parse_args()
-        run_calculator(
-            args.stake_amount,
-            args.duration,
-            args.lockup_percent
-        )
+        result = run_calculations(args)
+        print(f"APY: {result['apy']}")
+        print(f"Final Amount: {result['final_amount']}")
+        print(f"Penalty: {result['penalty']}")
+        print(f"Reward: {result['reward']}")
     except Exception as e:
-        logging.error(f"Application error: {str(e)}")
-        print(f"Application error: {str(e)}")
+        print(f"Error running calculations: {e}")
         sys.exit(1)
-    else:
-        sys.exit(0)
