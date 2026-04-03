@@ -1,0 +1,114 @@
+import pytest
+from requirements import parse_requirements
+
+def test_parse_requirements_empty():
+    with pytest.raises(ValueError, match="No requirements found"):
+        parse_requirements("")
+
+def test_parse_requirements_none():
+    with pytest.raises(ValueError, match="No requirements found"):
+        parse_requirements(None)
+
+def test_parse_requirements_simple():
+    reqs = parse_requirements("requests==2.27.1")
+    assert reqs == {"requests": "2.27.1"}
+
+def test_parse_requirements_with_comments():
+    req = "requests==2.27.1"
+    result = parse_requirements(req)
+    assert result == {"requests": "2.27.1"}
+
+def test_parse_requirements_multiple_lines():
+    req = """
+    requests==2.27.1
+    pytest==7.0.1
+    """
+    result = parse_requirements(req)
+    assert "requests" in result
+    assert "pytest" in result
+
+def test_parse_requirements_invalid_version():
+    req = "invalid==not_a_version"
+    with pytest.raises(ValueError):
+        parse_requirements(req)
+
+def test_parse_requirements_duplicate_packages():
+    req = """
+    requests==2.27.1
+    requests==3.0.0
+    """
+    result = parse_requirements(req)
+    assert "requests" in result
+
+def test_parse_requirements_unpinned_versions():
+    req = "numpy>=1.22.3"
+    with pytest.raises(ValueError):
+        parse_requirements(req)
+
+def test_parse_requirements_valid_version():
+    req = "pydantic==1.9.0"
+    result = parse_requirements(req)
+    assert "pydantic" in result
+
+def test_parse_requirements_mixed_comments_and_requirements():
+    req = """
+    # This is a comment
+    requests==2.27.1
+    # Another comment
+    """
+    result = parse_requirements(req)
+    assert "requests" in result
+
+def test_parse_requirements_with_extra_spaces():
+    req = "  requests == 2.27.1  "
+    result = parse_requirements(req)
+    assert "requests" in result
+
+def test_parse_requirements_with_inline_comments():
+    req = "requests==2.27.1 # comment"
+    result = parse_requirements(req)
+    assert "requests" in result
+
+def test_parse_requirements_with_multiple_equals():
+    req = "pydantic====1.9.0"
+    with pytest.raises(ValueError):
+        parse_requirements(req)
+
+def test_parse_requirements_with_tab_separator():
+    req = "requests\t==\t2.27.1"
+    result = parse_requirements(req)
+    assert "requests" in result
+
+def test_parse_requirements_with_space_separator():
+    req = "requests == 2.27.1"
+    result = parse_requirements(req)
+    assert "requests" in result
+
+def test_parse_requirements_with_multiple_packages():
+    req = """
+    requests==2.27.1
+    pytest==7.0.1
+    """
+    result = parse_requirements(req)
+    assert "requests" in result
+    assert "pytest" in result
+
+def test_parse_requirements_with_version_specifiers():
+    req = "requests>=2.27.1"
+    with pytest.raises(ValueError):
+        parse_requirements(req)
+
+def test_parse_requirements_with_inequality():
+    req = "requests!=2.27.1"
+    with pytest.raises(ValueError):
+        parse_requirements(req)
+
+def test_parse_requirements_with_wildcard_version():
+    req = "requests==*"
+    result = parse_requirements(req)
+    assert "*" in result["requests"]
+
+def test_parse_requirements_with_tilde_version():
+    req = "requests~=2.27.1"
+    result = parse_requirements(req)
+    assert "requests" in result
