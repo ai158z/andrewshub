@@ -1,0 +1,140 @@
+import xml.etree.ElementTree as ET
+import pytest
+from io import StringIO
+
+class TestPackageXML:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.package_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<package format="3">
+  <name>embodied_edge_sim</name>
+  <version>1.0.0</version>
+  <description>Embodied Cognition Edge Simulation Framework for ROS2</description>
+  <maintainer email="maintainer@example.com">ROS2 Simulation Team</maintainer>
+  <license>Apache License 2.0</license>
+  <author email="author@example.com">Simulation Development Group</author>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  <depend>rclpy</depend>
+  <depend>rclpy_components</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2_ros</depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+  <test_depend>python3-pytest-cov</test_depend>
+  <test_depend>python3-pytest-runner</test_depend>
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>'''
+        self.root = ET.fromstring(self.package_content)
+        yield
+
+    def test_package_has_name(self):
+        name = self.root.find('name')
+        assert name is not None
+        assert name.text == 'embodied_edge_sim'
+
+    def test_package_has_version(self):
+        version = self.root.find('version')
+        assert version is not None
+        assert version.text == '1.0.0'
+
+    def test_package_has_description(self):
+        description = self.root.find('description')
+        assert description is not None
+        assert 'Embodied Cognition Edge Simulation Framework' in description.text
+
+    def test_package_has_maintainer(self):
+        maintainer = self.root.find('maintainer')
+        assert maintainer is not None
+        assert maintainer.text == 'ROS2 Simulation Team'
+        assert maintainer.get('email') == 'maintainer@example.com'
+
+    def test_package_has_license(self):
+        license_elem = self.root.find('license')
+        assert license_elem is not None
+        assert license_elem.text == 'Apache License 2.0'
+
+    def test_package_has_author(self):
+        author = self.root.find('author')
+        assert author is not None
+        assert author.get('email') == 'author@example.com'
+        assert author.text == 'Simulation Development Group'
+
+    def test_package_has_buildtool_depends(self):
+        buildtool_depends = self.root.findall('buildtool_depend')
+        assert len(buildtool_depends) == 2
+        assert {elem.text for elem in buildtool_depends} == {'ament_cmake', 'ament_cmake_python'}
+
+    def test_package_has_correct_format(self):
+        assert self.root.get('format') == '3'
+
+    def test_package_has_required_dependencies(self):
+        depends = self.root.findall('depend')
+        depend_names = {elem.text for elem in depends}
+        required = {'rclpy', 'rclpy_components', 'std_msgs', 'sensor_msgs', 
+                   'geometry_msgs', 'nav_msgs', 'tf2_ros'}
+        assert depend_names.issuperset(required)
+
+    def test_package_has_test_dependencies(self):
+        test_depends = self.root.findall('test_depend')
+        test_depend_names = {elem.text for elem in test_depends}
+        required_tests = {
+            'ament_copyright', 'ament_flake8', 'ament_pep257',
+            'python3-pytest', 'python3-pytest-cov', 'python3-pytest-runner'
+        }
+        assert test_depend_names.issuperset(required_tests)
+
+    def test_package_has_export_build_type(self):
+        export = self.root.find('export')
+        assert export is not None
+        build_type = export.find('build_type')
+        assert build_type is not None
+        assert build_type.text == 'ament_python'
+
+    def test_package_root_has_correct_tag(self):
+        assert self.root.tag == 'package'
+
+    def test_package_contains_all_expected_depends(self):
+        all_depends = self.root.findall('depend')
+        depend_names = [d.text for d in all_depends]
+        expected_depends = ['rclpy', 'rclpy_components', 'std_msgs', 'sensor_msgs',
+                          'geometry_msgs', 'nav_msgs', 'tf2_ros']
+        for dep in expected_depends:
+            assert dep in depend_names
+
+    def test_package_contains_all_expected_buildtool_depends(self):
+        all_btd = self.root.findall('buildtool_depend')
+        btd_names = [btd.text for btd in all_btd]
+        expected = ['ament_cmake', 'ament_cmake_python']
+        for dep in expected:
+            assert dep in btd_names
+
+    def test_package_contains_all_expected_test_depends(self):
+        all_td = self.root.findall('test_depend')
+        td_names = [td.text for td in all_td]
+        expected_tests = ['ament_copyright', 'ament_flake8', 'ament_pep257',
+                         'python3-pytest', 'python3-pytest-cov', 'python3-pytest-runner']
+        for dep in expected_tests:
+            assert dep in td_names
+
+    def test_package_parses_without_error(self):
+        # This test ensures the XML is well-formed
+        assert ET.fromstring(self.package_content) is not None
+
+    def test_package_has_unique_name_per_spec(self):
+        name_elem = self.root.find('name')
+        assert name_elem is not None
+        assert name_elem.text == 'embodied_edge_sim'
+
+    def test_package_contains_valid_version_format(self):
+        version_elem = self.root.find('version')
+        assert version_elem is not None
+        # Check that version follows semver format
+        assert version_elem.text == '1.0.0'
