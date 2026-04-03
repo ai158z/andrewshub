@@ -1,0 +1,63 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.ubuntu }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+    
+    - name: Lint and Format Check
+      run: |
+        # Run linting and formatting checks
+        flake8 .
+        black --check .
+    
+    - name: Run tests
+      run: |
+        pytest --cov=property_search_cli tests/
+    
+    - name: Build package
+      run: |
+        python -m build
+    
+    - name: Check if Dockerfile exists
+      id: check_docker
+      run: |
+        if [ -f "Dockerfile" ]; then
+          echo "docker_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "docker_exists=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Docker build
+      if: steps.check_docker.outputs.docker_exists == 'true'
+      run: |
+        docker build -t property-search-cli:latest .
