@@ -16,10 +16,15 @@ Thumbs.db
 # Forge metadata
 .forge_meta.json
 QUALITY_REPORT.json
-# Node
-node_modules/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
 dist/
 build/
-.next/
-coverage/
-*.tsbuildinfo
+.eggs/
+venv/
+.venv/
+*.egg
+.pytest_cache/
