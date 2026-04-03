@@ -1,146 +1,140 @@
 # API Rate Limiter
 
-A robust rate limiting library for public API endpoints with Redis integration. Enforces configurable rate limits and provides middleware for Express.js and FastAPI frameworks.
+A Flask middleware library that implements rate limiting for API endpoints using the sliding window algorithm with Redis integration.
 
 ## Features
 
-- **Configurable Rate Limits**: Set request limits per time window (e.g., 100 requests/minute/IP)
-- **Multi-framework Support**: Ready-to-use middleware for Express.js and FastAPI
-- **Redis Integration**: Efficient request tracking using Redis for distributed rate limiting
-- **Automatic Blocking**: Returns 429 status code when rate limits are exceeded
-- **Docker Support**: Containerized deployment ready
-- **TypeScript Support**: Full TypeScript definitions included
+- **Sliding Window Algorithm**: Implements precise rate limiting using a time-based sliding window approach
+- **Redis Integration**: Stores rate limiting data in Redis with automatic expiration
+- **Automatic Endpoint Discovery**: Scans and identifies all public API endpoints for rate limiting
+- **Configurable Limits**: Default 100 requests per minute per IP address
+- **Automatic Cleanup**: Redis data expires after 1 hour
+- **Proper HTTP Responses**: Returns 429 Too Many Requests with Retry-After header
+- **Comprehensive Logging**: Tracks rate-limited requests with IP, timestamp, and limit details
+- **Docker Support**: Containerized deployment with Docker Compose
 
 ## Prerequisites
 
-- Node.js >= 14.x
+- Python 3.7+
 - Redis server
 - Docker and Docker Compose (for containerized deployment)
 
 ## Installation
 
-```bash
-npm install api-rate-limiter
-```
-
-### Development Setup
-
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone <repository-url>
 cd api-rate-limiter
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
-3. Copy and configure environment variables:
+3. **Set up environment variables:**
 ```bash
 cp .env.example .env
-```
-
-4. Start Redis using Docker Compose:
-```bash
-docker-compose up -d redis
+# Edit .env file with your configuration
 ```
 
 ## Environment Variables
 
-Create a `.env` file with the following variables:
+Create a `.env` file based on `.env.example`:
 
 ```env
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_DB=0
-RATE_LIMIT_WINDOW=60
-RATE_LIMIT_MAX=100
+RATE_LIMIT=100
+RATE_WINDOW=60
 ```
 
-## Usage
+## Setup & Configuration
 
-### Express.js Integration
+### Quick Start with Docker Compose
 
-```typescript
-import express from 'express';
-import { createRateLimiter } from 'api-rate-limiter';
+```bash
+# Start Redis and the rate limiter service
+docker-compose up -d
 
-const app = express();
-const rateLimiter = createRateLimiter({
-  windowMs: 60000, // 1 minute
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests, please try again later',
-  statusCode: 429
-});
-
-app.use('/api/', rateLimiter.expressMiddleware);
-
-app.get('/api/data', (req, res) => {
-  res.json({ message: 'Data retrieved successfully' });
-});
-
-app.listen(3000);
+# Run tests
+docker-compose exec app python -m pytest tests/
 ```
 
-### FastAPI Integration
+### Manual Setup
 
-```typescript
-import { createRateLimiter } from 'api-rate-limiter';
+1. Start Redis server:
+```bash
+redis-server
+```
 
-const rateLimiter = createRateLimiter({
-  windowMs: 60000,
-  max: 100,
-  message: 'Too many requests, please try again later',
-  statusCode: 429
-});
+2. Run the application:
+```bash
+python src/main.py
+```
 
-// Apply to your FastAPI routes
-app.use('/api/', rateLimiter.fastifyMiddleware);
+## Usage Examples
+
+### Basic Integration
+
+```python
+from flask import Flask
+from src.middleware import setup_rate_limiter
+
+app = Flask(__name__)
+setup_rate_limiter(app)
+
+@app.route('/api/users')
+def get_users():
+    return {"users": []}
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+### Testing Rate Limits
+
+```python
+# Test the rate limiter
+import requests
+
+# Make 100 rapid requests to test the limit
+for i in range(150):
+    response = requests.get('http://localhost:5000/api/test')
+    if response.status_code == 429:
+        print(f"Rate limited at request {i}")
+        break
 ```
 
 ## API Documentation
 
-### `createRateLimiter(options)`
-
-Creates a rate limiter instance with the specified options.
-
-**Parameters:**
-- `options`: Configuration object with the following properties:
-  - `windowMs`: Time window in milliseconds (default: 60000)
-  - `max`: Maximum requests per window (default: 100)
-  - `message`: Response message for rate limit exceeded (default: 'Too many requests')
-  - `statusCode`: HTTP status code for rate limit exceeded (default: 429)
-
-**Returns:** Rate limiter instance with middleware methods
-
-### Middleware Methods
-
-- `expressMiddleware`: Express.js middleware function
-- `fastifyMiddleware`: FastAPI middleware function
+The rate limiter automatically applies to all registered endpoints. When a client exceeds the rate limit:
+- HTTP 429 Too Many Requests response
+- `Retry-After` header indicates when the client can retry
+- All requests are logged with IP, timestamp, and limit information
 
 ## Project Structure
 
 ```
 api-rate-limiter/
 ├── src/
-│   ├── index.ts              # Main entry point
-│   ├── rate-limiter.ts      # Core rate limiting logic
-│   ├── config.ts           # Configuration interface
-│   ├── types.ts            # Type definitions
-│   ├── utils.ts           # Utility functions
-│   └── middleware/
-│       ├── express.middleware.ts
-│       └── fastapi.middleware.ts
+│   ├── rate_limiter.py          # Core rate limiting logic
+│   ├── redis_client.py         # Redis connection management
+│   ├── middleware.py            # Flask middleware implementation
+│   ├── utils/
+│   │   └── endpoint_scanner.py  # Automatic endpoint discovery
+│   ├── config/
+│   │   └── rate_limit_config.py # Configuration module
+│   └── main.py                   # Application entry point
 ├── tests/
-│   ├── rate-limiter.test.ts
-│   ├── express.middleware.test.ts
-│   └── fastapi.middleware.test.ts
-├── Dockerfile
-├── docker-compose.yml
-├── package.json
-├── tsconfig.json
-└── jest.config.js
+│   ├── test_rate_limiter.py    # Unit tests
+│   └── conftest.py              # Test configuration
+├── Dockerfile                   # Container definition
+├── docker-compose.yml          # Development environment
+├── requirements.txt             # Dependencies
+├── .env.example                 # Environment configuration example
+└── README.md                    # This file
 ```
 
 ## Testing
@@ -148,51 +142,38 @@ api-rate-limiter/
 Run the test suite:
 
 ```bash
-npm test
+# Run all tests
+python -m pytest tests/
+
+# Run with verbose output
+python -m pytest -v tests/
+
+# Run specific test file
+python -m pytest tests/test_rate_limiter.py
 ```
 
-### Run tests with coverage:
+### Test Coverage
 
-```bash
-npm run test:coverage
-```
-
-### Test individual components:
-
-```bash
-npm run test:unit src/rate-limiter.test.ts
-npm run test:unit src/middleware/express.middleware.test.ts
-npm run test:unit src/middleware/fastapi.middleware.test.ts
-```
+Tests include:
+- Sliding window algorithm accuracy
+- Rate limit enforcement
+- Redis integration
+- Endpoint discovery
+- Response codes and headers
 
 ## Deployment
 
 ### Docker Deployment
 
-1. Build the Docker image:
-
 ```bash
-docker build -t api-rate-limiter .
+# Build and start services
+docker-compose up --build
+
+# Scale the service
+docker-compose up -d --scale app=3
 ```
 
-2. Run with Docker Compose:
-
-```bash
-docker-compose up -d
-```
-
-### Environment Configuration
-
-Ensure Redis is accessible and configure the following environment variables:
-
-```env
-REDIS_HOST=your-redis-host
-REDIS_PORT=6379
-```
-
-## Docker Compose Setup
-
-The project includes Docker Compose configuration for development:
+### Docker Compose Configuration
 
 ```yaml
 version: '3.8'
@@ -201,70 +182,59 @@ services:
     image: redis:alpine
     ports:
       - "6379:6379"
+  
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+    restart: unless-stopped
 ```
-
-To start the development environment:
-
-```bash
-docker-compose up -d
-```
-
-This will start Redis and make it available at `localhost:6379`.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Contributing
+```
+MIT License
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a pull request
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-## Support
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-For support, please open an issue on the repository.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
-## Changelog
+## Configuration
 
-### 1.0.0
-- Initial release with Express.js and FastAPI middleware support
-- Redis integration for distributed rate limiting
-- Docker Compose development setup
-- Comprehensive test suite
+The library can be configured via environment variables:
 
-## Authors
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `REDIS_HOST` | Redis server host | `localhost` |
+| `REDIS_PORT` | Redis server port | `6379` |
+| `REDIS_DB` | Redis database number | `0` |
+| `RATE_LIMIT` | Requests per window | `100` |
+| `RATE_WINDOW` | Window size in seconds | `60` |
 
-- **api-rate-limiter team**
+## Monitoring
 
-## Keywords
-
-- rate-limiting
-- express-middleware
-- redis
-- api-protection
-- typescript
-
-## Development Scripts
-
-- `npm run build` - Compile TypeScript to JavaScript
-- `npm run test` - Run test suite
-- `npm run test:watch` - Run tests in watch mode
-- `npm run dev` - Run development server
-- `npm run start` - Start production server
-
-## Dependencies
-
-- redis: ^4.0.0
-- ioredis: ^5.0.0
-- @types/redis: ^2.8.0
-- @types/ioredis: ^4.0.0
-- express: ^4.18.0
-- jest: ^29.0.0
-- typescript: ^4.9.0
-
----
-
-**Note**: This is a library meant to be integrated into existing Node.js applications. It does not provide a standalone service but rather tools to implement rate limiting in your APIs.
+Rate-limited requests are logged in the following format:
+```
+[RateLimiter] IP: 127.0.0.1, Timestamp: 2023-01-01 12:00:00, Limit: 100 requests/minute
+```
