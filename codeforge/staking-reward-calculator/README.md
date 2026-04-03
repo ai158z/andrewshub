@@ -1,174 +1,166 @@
 # Staking Reward Calculator
 
-A command-line interface (CLI) tool for calculating staking rewards with support for APY, compound interest, and lockup penalties. This calculator helps users estimate their staking returns based on principal amount, annual percentage rate, staking duration, and lockup periods.
+A Python library for calculating staking rewards with APY, compound interest, and lockup penalties. This tool provides precise financial calculations for cryptocurrency staking scenarios with detailed reward estimates.
 
 ## Features
 
-- **APY Calculation**: Calculate annual percentage yield with compounding interest
-- **Compound Interest**: Support for compounding staking rewards over time
-- **Lockup Penalties**: Calculate penalties for early withdrawal during lockup periods
-- **Input Validation**: Robust validation and type conversion for all inputs
-- **CLI Interface**: User-friendly command-line interface with clear options
-- **Docker Support**: Containerized application for easy deployment
+- **APY Calculation**: Accurate Annual Percentage Yield calculations with configurable compounding frequencies
+- **Compound Interest**: Support for various compounding periods (daily, weekly, monthly, annually)
+- **Lockup Penalties**: Calculate penalties for early unstaking with configurable penalty structures
+- **High Precision**: Uses Python's `decimal` module for financial-grade precision
+- **Input Validation**: Comprehensive validation for all staking parameters
+- **Detailed Results**: Breakdown of rewards, penalties, and effective returns
 
 ## Prerequisites
 
-- Python 3.7 or higher
-- pip package manager
-- Docker (optional, for containerized deployment)
+- Python 3.7+
+- pip (Python package installer)
 
 ## Installation
 
-### Local Installation
-
+### From PyPI
 ```bash
-# Clone the repository
-git clone <repository-url>
+pip install staking-reward-calculator
+```
+
+### From Source
+```bash
+git clone https://github.com/your-username/staking-reward-calculator.git
 cd staking-reward-calculator
-
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Docker Installation
-
+### Development Installation
 ```bash
-# Build the Docker image
-docker build -t staking-reward-calculator .
-
-# Run the container
-docker run staking-reward-calculator --principal 1000 --apr 0.05 --duration 365 --lockup 30
+pip install -e .
 ```
 
-## Environment Variables
-
-Create a `.env` file based on `.env.example`:
-
-```bash
-# .env.example
-DEFAULT_PRINCIPAL=1000
-DEFAULT_APR=0.08
-DEFAULT_DURATION=365
-DEFAULT_LOCKUP=30
-```
-
-## Usage
+## Usage Examples
 
 ### Basic Usage
+```python
+from staking_calculator import calculate_staking_rewards
 
-```bash
-# Calculate staking rewards
-python src/main.py --principal 1000 --apr 0.05 --duration 365 --lockup 30
+# Calculate rewards for 1000 tokens staked for 1 year at 10% APY
+result = calculate_staking_rewards(
+    stake_amount=1000.0,
+    duration_days=365,
+    annual_percentage_yield=10.0,
+    compounding_frequency='daily'
+)
 
-# With partial parameters (using defaults for others)
-python src/main.py --principal 5000 --duration 180
+print(f"Total Rewards: {result.total_rewards}")
+print(f"Final Amount: {result.final_amount}")
 ```
 
-### Command Line Arguments
+### With Early Unstaking Penalty
+```python
+from staking_calculator import calculate_staking_with_penalty
 
-```bash
-python src/main.py --help
-```
+# Calculate with 25% penalty for early withdrawal after 90 days
+result = calculate_staking_with_penalty(
+    stake_amount=5000.0,
+    duration_days=90,
+    annual_percentage_yield=8.5,
+    penalty_rate=0.25,
+    penalty_applies_before_days=180
+)
 
-- `--principal`: Principal amount for staking (default: 1000)
-- `--apr`: Annual Percentage Rate as decimal (default: 0.08)
-- `--duration`: Staking duration in days (default: 365)
-- `--lockup`: Lockup period in days (default: 30)
-
-### Examples
-
-```bash
-# Example 1: Basic calculation
-python src/main.py --principal 10000 --apr 0.12 --duration 365 --lockup 90
-
-# Example 2: Minimum staking period
-python src/main.py --principal 500 --duration 30
-
-# Example 3: No lockup penalty
-python src/main.py --principal 2000 --apr 0.06 --duration 180 --lockup 0
+print(f"Rewards After Penalty: {result.rewards_after_penalty}")
+print(f"Penalty Amount: {result.penalty_amount}")
 ```
 
 ## API Documentation
 
-This is a CLI-only application, so there is no web API. The core calculation functions can be imported and used programmatically:
+### Main Functions
 
-```python
-from src.staking_calculator import calculate_staking_rewards
+#### `calculate_staking_rewards()`
+Calculate staking rewards with compound interest
 
-result = calculate_staking_rewards(
-    principal=1000,
-    apr=0.05,
-    duration=365,
-    lockup=30
-)
-```
+**Parameters:**
+- `stake_amount` (float): Initial amount staked
+- `duration_days` (int): Staking duration in days
+- `annual_percentage_yield` (float): Annual yield percentage
+- `compounding_frequency` (str): Compounding period ('daily', 'weekly', 'monthly', 'annually')
+- `decimal_precision` (int, optional): Decimal precision for calculations
+
+**Returns:**
+`StakingResult` object with:
+- `total_rewards`: Total accumulated rewards
+- `final_amount`: Final stake value
+- `effective_apr`: Effective annual percentage rate
+- `compounding_details`: Breakdown of compounding calculations
+
+#### `calculate_staking_with_penalty()`
+Calculate staking rewards including early withdrawal penalties
+
+**Parameters:**
+- `stake_amount` (float): Initial amount staked
+- `duration_days` (int): Actual staking duration
+- `annual_percentage_yield` (float): Annual yield percentage
+- `penalty_rate` (float): Penalty rate as decimal (0.25 = 25%)
+- `penalty_applies_before_days` (int): Days before which penalty applies
+- `compounding_frequency` (str): Compounding period
+
+**Returns:**
+`PenaltyResult` object with additional penalty information
 
 ## Project Structure
 
 ```
 staking-reward-calculator/
-├── src/
-│   ├── main.py              # Application entry point
-│   ├── cli.py               # CLI argument parsing
-│   ├── staking_calculator.py # Core calculation logic
-│   ├── validator.py           # Input validation utilities
-│   └── types.py            # Type definitions and conversion
+├── staking_calculator/
+│   ├── __init__.py
+│   ├── core.py          # Core calculation engine
+│   ├── models.py         # Data models
+│   ├── calculator.py     # Main calculator logic
+│   ├── validators.py      # Input validation
+│   └── utils.py        # Utility functions
 ├── tests/
-│   ├── test_staking_calculator.py
-│   └── test_cli.py
-├── Dockerfile               # Docker configuration
-├── requirements.txt           # Python dependencies
-├── .env.example            # Environment variable template
-└── README.md              # This file
+│   ├── test_calculator.py
+│   ├── test_compounding.py
+│   └── test_penalties.py
+├── requirements.txt
+├── setup.py
+└── README.md
 ```
 
 ## Testing
 
-Run the test suite:
-
+Run all tests:
 ```bash
-# Run all tests
 python -m pytest tests/
-
-# Run with coverage
-python -m pytest --cov=src tests/
-
-# Run specific test file
-python -m pytest tests/test_staking_calculator.py
 ```
+
+Run specific test modules:
+```bash
+python -m pytest tests/test_calculator.py
+python -m pytest tests/test_compounding.py
+python -m pytest tests/test_penalties.py
+```
+
+Run tests with coverage:
+```bash
+python -m pytest --cov=staking_calculator tests/
+```
+
+## Environment Variables
+
+This library does not require environment variables for basic operation. All configuration is passed through function parameters.
 
 ## Deployment
 
-### Docker Deployment
+This is a library package. For deployment in applications:
 
-```bash
-# Build and run with Docker
-docker build -t staking-calculator .
-docker run staking-calculator --principal 1000 --apr 0.05 --duration 365
-
-# Run with environment variables
-docker run -it --env-file .env staking-calculator
-```
-
-### Local Deployment
-
-```bash
-# Make the script executable
-chmod +x src/main.py
-
-# Run directly
-./src/main.py --principal 2000 --duration 180
-```
+1. Install via pip: `pip install staking-reward-calculator`
+2. Import in your Python code: `from staking_calculator import calculate_staking_rewards`
+3. Use the calculation functions in your application logic
 
 ## License
 
 MIT License
 
-Copyright (c) 2024 Staking Reward Calculator Project
+Copyright (c) 2023 Your Name
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
