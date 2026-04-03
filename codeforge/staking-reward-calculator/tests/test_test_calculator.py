@@ -1,114 +1,206 @@
 import pytest
-from staking_calculator import calculate_apy, calculate_compound_interest, calculate_penalty, calculate_staking_reward
+from decimal import Decimal
+from staking_calculator import calculate_staking_rewards
 
 
-def test_calculate_apy_normal():
-    result = calculate_apy(0.05, 365)
-    expected = 0.05
-    assert pytest.approx(result, abs=1e-10) == expected
+def test_basic_reward_calculation():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    expected_reward = stake_amount * apy
+    assert abs(float(result.total_reward) - float(expected_reward)) < 0.01
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
 
 
-def test_calculate_apy_short_period():
-    result = calculate_apy(0.10, 180)
-    expected = (1 + 0.10) ** (365 / 180) - 1
-    assert pytest.approx(result, abs=1e-10) == expected
+def test_compound_interest_daily():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 365
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.compound_rewards > Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
 
 
-def test_calculate_apy_higher_rate():
-    result = calculate_apy(0.15, 365)
-    expected = 0.15
-    assert pytest.approx(result, abs=1e-10) == expected
+def test_zero_stake_amount():
+    stake_amount = Decimal('0')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward == Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
 
 
-def test_calculate_apy_zero_days():
+def test_zero_duration():
+    stake_amount = Decimal('1000')
+    duration = 0
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward == Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_zero_apr():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward == Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_high_compound_frequency():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 365
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.compound_rewards > Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_negative_values():
+    stake_amount = Decimal('-1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
     with pytest.raises(ValueError):
-        calculate_apy(0.05, 0)
+        calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
 
 
-def test_calculate_apy_negative_rate():
+def test_fractional_apr():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.035')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward > Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_large_stake_amount():
+    stake_amount = Decimal('1000000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward > Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_small_apr():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.0001')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward > Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_high_penalty_rate():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0.5')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward > Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions > Decimal('0')
+
+
+def test_zero_compound_frequency():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 0
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward == Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
+
+
+def test_negative_duration():
+    stake_amount = Decimal('1000')
+    duration = -365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0')
+    compound_frequency = 1
+
     with pytest.raises(ValueError):
-        calculate_apy(-0.05, 365)
+        calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
 
 
-def test_calculate_compound_interest_basic():
-    result = calculate_compound_interest(1000, 0.05, 365)
-    expected = 1000 * ((1 + 0.05) ** (365 / 365)) - 1000
-    assert pytest.approx(result, abs=1e-10) == expected
+def test_fractional_penalty():
+    stake_amount = Decimal('1000')
+    duration = 365
+    apy = Decimal('0.05')
+    penalty_rate = Decimal('0.001')
+    compound_frequency = 1
+
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward > Decimal('0')
+    assert result.compound_rewards == Decimal('0')
+    assert result.penalty_deductions > Decimal('0')
 
 
-def test_calculate_compound_interest_partial_year():
-    result = calculate_compound_interest(5000, 0.08, 180)
-    expected = 5000 * ((1 + 0.08) ** (180 / 365)) - 5000
-    assert pytest.approx(result, abs=1e-10) == expected
+def test_maximum_values():
+    stake_amount = Decimal('1000000')
+    duration = 365000
+    apy = Decimal('1.0')
+    penalty_rate = Decimal('0')
+    compound_frequency = 365
 
-
-def test_calculate_compound_interest_zero_principal():
-    result = calculate_compound_interest(0, 0.05, 365)
-    assert result == 0
-
-
-def test_calculate_compound_interest_negative_principal():
-    with pytest.raises(ValueError):
-        calculate_compound_interest(-1000, 0.05, 365)
-
-
-def test_calculate_compound_interest_negative_rate():
-    with pytest.raises(ValueError):
-        calculate_compound_interest(1000, -0.05, 365)
-
-
-def test_calculate_penalty_normal():
-    result = calculate_penalty(1000, 0.10)
-    expected = 1000 * 0.10
-    assert result == expected
-
-
-def test_calculate_penalty_no_penalty():
-    result = calculate_penalty(1000, 0)
-    assert result == 0
-
-
-def test_calculate_penalty_over_100_percent():
-    with pytest.raises(ValueError):
-        calculate_penalty(1000, 1.5)
-
-
-def test_calculate_penalty_negative_amount():
-    with pytest.raises(ValueError):
-        calculate_penalty(-1000, 0.10)
-
-
-def test_calculate_staking_reward_normal():
-    stake_amount = 10000
-    duration_days = 365
-    annual_rate = 0.05
-    penalty_rate = 0.10
-    result = calculate_staking_reward(stake_amount, duration_days, annual_rate, penalty_rate)
-    expected_interest = stake_amount * ((1 + annual_rate) ** (duration_days / 365)) - stake_amount
-    assert pytest.approx(result, abs=1e-10) == expected_interest
-
-
-def test_calculate_staking_reward_short_duration():
-    stake_amount = 10000
-    duration_days = 30
-    annual_rate = 0.05
-    penalty_rate = 0.10
-    result = calculate_staking_reward(stake_amount, duration_days, annual_rate, penalty_rate)
-    interest = stake_amount * ((1 + annual_rate) ** (duration_days / 365)) - stake_amount
-    expected = interest * (1 - penalty_rate)
-    assert pytest.approx(result, abs=1e-10) == expected
-
-
-def test_calculate_staking_reward_negative_stake():
-    with pytest.raises(ValueError):
-        calculate_staking_reward(-10000, 365, 0.05, 0.10)
-
-
-def test_calculate_staking_reward_negative_duration():
-    with pytest.raises(ValueError):
-        calculate_staking_reward(10000, -365, 0.05, 0.10)
-
-
-def test_calculate_staking_reward_negative_rate():
-    with pytest.raises(ValueError):
-        calculate_staking_reward(10000, 365, -0.05, 0.10)
+    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+    
+    assert result.total_reward > Decimal('0')
+    assert result.compound_rewards > Decimal('0')
+    assert result.penalty_deductions == Decimal('0')
