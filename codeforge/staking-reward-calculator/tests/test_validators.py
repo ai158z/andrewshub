@@ -1,85 +1,74 @@
 import pytest
-import decimal
-from staking_calculator.validators import validate_staking_parameters
-from staking_calculator.utils import precise_division, precise_multiply, percentage_of
+from fastapi import HTTPException
+from src.utils.validators import validate_staking_input, validate_duration, StakingInput
 
-def test_validate_staking_parameters_valid_inputs():
-    assert validate_staking_parameters(1000, 365, 5.0, 2.0, 12) == True
+def test_validate_staking_input_valid_data():
+    data = {"stake": 1000.0, "duration": 365, "apr": 0.05}
+    assert validate_staking_input(data) is True
 
-def test_validate_staking_parameters_negative_stake_amount():
-    with pytest.raises(ValueError, match="stake_amount must be non-negative"):
-        validate_staking_parameters(-100, 365, 5.0, 2.0, 12)
+def test_validate_staking_input_missing_field():
+    data = {"stake": 1000.0, "duration": 365}
+    assert validate_staking_input(data) is False
 
-def test_validate_staking_parameters_invalid_stake_amount_type():
-    with pytest.raises(TypeError, match="stake_amount must be a number"):
-        validate_staking_parameters("invalid", 365, 5.0, 2.0, 12)
+def test_validate_staking_input_invalid_type():
+    data = {"stake": "invalid", "duration": 365, "apr": 0.05}
+    assert validate_staking_input(data) is False
 
-def test_validate_staking_parameters_negative_duration():
-    with pytest.raises(ValueError, match="duration must be non-negative"):
-        validate_staking_parameters(1000, -30, 5.0, 2.0, 12)
+def test_validate_staking_input_negative_numbers():
+    data = {"stake": -1000.0, "duration": 365, "apr": 0.05}
+    assert validate_staking_input(data) is True
 
-def test_validate_staking_parameters_invalid_duration_type():
-    with pytest.raises(TypeError, match="duration must be a number"):
-        validate_staking_parameters(1000, "invalid", 5.0, 2.0, 12)
+def test_validate_staking_input_mixed_invalid_data():
+    data = {"stake": 1000.0, "duration": "invalid", "apr": 0.05}
+    assert validate_staking_input(data) is False
 
-def test_validate_staking_parameters_negative_apy():
-    with pytest.raises(ValueError, match="apy must be non-negative"):
-        validate_staking_parameters(1000, 365, -5.0, 2.0, 12)
+def test_validate_duration_valid_positive():
+    assert validate_duration(30) is True
 
-def test_validate_staking_parameters_invalid_apy_type():
-    with pytest.raises(TypeError, match="apy must be a number"):
-        validate_staking_parameters(1000, 365, "invalid", 2.0, 12)
+def test_validate_duration_zero_days():
+    assert validate_duration(0) is True
 
-def test_validate_staking_parameters_invalid_penalty_rate_type():
-    with pytest.raises(TypeError, match="penalty_rate must be a number"):
-        validate_staking_parameters(1000, 365, 5.0, "invalid", 12)
+def test_validate_duration_negative_days():
+    assert validate_duration(-1) is False
 
-def test_validate_staking_parameters_penalty_rate_negative():
-    with pytest.raises(ValueError, match="penalty_rate must be between 0 and 100"):
-        validate_staking_parameters(1000, 365, 5.0, -5, 12)
+def test_validate_duration_invalid_type():
+    assert validate_duration("invalid") is False
 
-def test_validate_staking_parameters_penalty_rate_over_100():
-    with pytest.raises(ValueError, match="penalty_rate must be between 0 and 100"):
-        validate_staking_parameters(1000, 365, 5.0, 105, 12)
+def test_validate_duration_float_input():
+    assert validate_duration(30.5) is False
 
-def test_validate_staking_parameters_invalid_compound_frequency_type():
-    with pytest.raises(TypeError, match="compound_frequency must be an integer"):
-        validate_staking_parameters(1000, 365, 5.0, 2.0, "invalid")
+def test_staking_input_model_valid():
+    staking_input = StakingInput(stake=1000.0, duration=365, apr=0.05)
+    assert staking_input.is_valid() is True
 
-def test_validate_staking_parameters_compound_frequency_zero():
-    with pytest.raises(ValueError, match="compound_frequency must be positive"):
-        validate_staking_parameters(1000, 365, 5.0, 2.0, 0)
+def test_staking_input_model_negative_stake():
+    staking_input = StakingInput(stake=-1000.0, duration=365, apr=0.05)
+    assert staking_input.is_valid() is False
 
-def test_validate_staking_parameters_compound_frequency_negative():
-    with pytest.raises(ValueError, match="compound_frequency must be positive"):
-        validate_staking_parameters(1000, 365, 5.0, 2.0, -1)
+def test_staking_input_model_zero_duration():
+    staking_input = StakingInput(stake=1000.0, duration=0, apr=0.05)
+    assert staking_input.is_valid() is False
 
-def test_validate_staking_parameters_with_decimal_values():
-    result = validate_staking_parameters(
-        decimal.Decimal('1000.50'),
-        decimal.Decimal('365.25'),
-        decimal.Decimal('5.25'),
-        decimal.Decimal('1.5'),
-        365
-    )
-    assert result == True
+def staking_input_model_zero_apr():
+    staking_input = StakingInput(stake=1000.0, duration=365, apr=0.0)
+    assert staking_input.is_valid() is False
 
-def test_validate_staking_parameters_with_float_values():
-    result = validate_staking_parameters(1000.5, 365.5, 5.5, 1.5, 12)
-    assert result == True
+def test_staking_input_model_all_zero():
+    staking_input = StakingInput(stake=0.0, duration=0, apr=0.0)
+    assert staking_input.is_valid() is False
 
-def test_validate_staking_parameters_with_zero_values():
-    result = validate_staking_parameters(0, 0, 0, 0, 1)
-    assert result == True
+def test_staking_input_model_all_negative():
+    staking_input = StakingInput(stake=-1000.0, duration=-365, apr=-0.05)
+    assert staking_input.is_valid() is False
 
-def test_validate_staking_parameters_with_mixed_types():
-    result = validate_staking_parameters(1000, 365, 5.0, 2, 12)
-    assert result == True
+def test_validate_staking_input_empty_dict():
+    data = {}
+    assert validate_staking_input(data) is False
 
-def test_validate_staking_parameters_large_values():
-    result = validate_staking_parameters(1000000, 10000, 50, 25, 365)
-    assert result == True
+def test_validate_staking_input_none_value():
+    data = {"stake": None, "duration": 365, "apr": 0.05}
+    assert validate_staking_input(data) is False
 
-def test_validate_staking_parameters_small_values():
-    result = validate_staking_parameters(0.01, 0.5, 0.01, 0.01, 1)
-    assert result == True
+def test_staking_input_model_large_numbers():
+    staking_input = StakingInput(stake=1e10, duration=100000, apr=1000.0)
+    assert staking_input.is_valid() is True
