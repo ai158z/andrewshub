@@ -1,0 +1,84 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test_db
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install ROS2
+      uses: ros-tooling/setup-ros@0.4.0
+      with:
+        required-ros-distributions: foxy
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+
+    - name: Lint code
+      run: |
+        pip install flake8
+        flake8 app/ --max-line-length=88
+
+    - name: Format check
+      run: |
+        pip install black
+        black --check app/
+
+    - name: Run tests
+      run: |
+        pytest tests/ -v
+
+    - name: Build frontend (if applicable)
+      run: |
+        # Add frontend build commands if you have a build process
+        # For example: npm install && npm run build
+        echo "Frontend build step - customize based on your setup"
+
+    - name: Docker build
+      run: |
+        docker build -t agent-dashboard-ros2 .
+
+    - name: Run Docker container
+      run: |
+        docker run -d --name agent-dashboard \
+          -e POSTGRES_HOST=localhost \
+          -e POSTGRES_PORT=5432 \
+          agent-dashboard-ros2
