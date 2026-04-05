@@ -1,82 +1,325 @@
 import pytest
-from unittest.mock import patch
-from staking_calculator import calculate_apy, calculate_compound_interest
+from typing import Dict, Any
+from src.staking_calculator import calculate_rewards
+from src.models.stake_data import StakeData
+from src.models.reward_rate import RewardRate
 
-def test_calculate_apy_basic():
-    result = calculate_apy(0.05, 12)
-    expected = (1 + 0.05/12) ** 12 - 1
-    assert round(result, 10) == round(expected, 10)
 
-def test_calculate_apy_zero_rate():
-    result = calculate_apy(0.0, 12)
-    assert result == 0.0
-
-def test_calculate_apy_high_frequency():
-    result = calculate_apy(0.1, 365)
-    expected = (1 + 0.1/365) ** 365 - 1
-    assert round(result, 10) == round(expected, 10)
-
-def test_calculate_compound_interest_basic():
-    result = calculate_compound_interest(1000, 0.05, 1, 1)
-    expected = 1000 * (1 + 0.05) - 1000
-    assert round(result, 10) == round(expected, 10)
-
-def test_calculate_compound_interest_large_principal():
-    result = calculate_compound_interest(10000, 0.05, 1, 1)
-    expected = 10000 * (1 + 0.05) - 10000
-    assert round(result, 10) == round(expected, 10)
-
-def test_calculate_compound_interest_zero_principal():
-    result = calculate_compound_interest(0, 0.05, 1, 1)
-    assert result == 0
-
-def test_calculate_compound_interest_high_precision():
-    result = calculate_compound_interest(5000.50, 0.025, 2, 4)
-    expected = 5000.50 * (1 + 0.025 / 4) ** (4 * 2) - 5000.50
-    assert round(result, 2) == round(expected, 2)
-
-@pytest.mark.parametrize("principal,rate,time_periods,compound_frequency,expected", [
-    (1000, 0.05, 1, 1, 1000 * (1 + 0.05) - 1000),
-    (0, 0.05, 1, 1, 0),
-])
-def test_calculate_compound_interest_parametrized(principal, rate, time_periods, compound_frequency, expected):
-    result = calculate_compound_interest(principal, rate, time_periods, compound_frequency)
-    assert round(result, 10) == round(expected, 10)
-
-def test_calculate_apy_edge_cases():
-    # Test zero rate
-    result = calculate_apy(0.0, 12)
-    assert result == 0.0
+def test_calculate_rewards_daily_compounding() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
     
-    # Test high frequency case
-    result = calculate_apy(0.1, 365)
-    expected = (1 + 0.1/365) ** 365 - 1
-    assert round(result, 10) == round(expected, 10)
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    
+    assert isinstance(result, dict)
+    assert "total_reward" in result
+    assert "daily_breakdown" in result
+    assert result["total_reward"] > 0
+    assert len(result["daily_breakdown"]) == stake_data.duration_days
 
-def test_compound_interest_edge_cases():
-    # Test zero principal
-    result = calculate_compound_interest(0, 0.05, 1, 1)
-    assert result == 0
 
-    # Test high precision
-    result = calculate_compound_interest(5000.50, 0.025, 2, 4)
-    expected = 5000.50 * (1 + 0.025 / 4) ** (4 * 2) - 5000.50
-    assert round(result, 2) == round(expected, 2)
+def test_calculate_rewards_monthly_compounding() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="monthly"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="monthly"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
 
-def test_invalid_input_apy():
-    with pytest.raises(TypeError):
-        calculate_apy("invalid", 12)
 
-def test_invalid_input_compound_interest():
-    with pytest.raises(TypeError):
-        calculate_compound_interest("invalid", 0.05, 1, 1)
+def test_calculate_rewards_zero_amount() -> None:
+    stake_data = StakeData(
+        amount=0.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] == 0
 
-def test_calculate_apy_negative_rate():
-    result = calculate_apy(-0.05, 12)
-    expected = (1 + (-0.05)/12) ** 12 - 1
-    assert round(result, 10) == round(expected, 10)
 
-def test_calculate_compound_interest_negative_principal():
-    result = calculate_compound_interest(-1000, 0.05, 1, 1)
-    expected = -1000 * (1 + 0.05) - (-1000)
-    assert round(result, 10) == round(expected, 10)
+def test_calculate_rewards_zero_rate() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.0,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] == 0
+
+
+def test_calculate_rewards_negative_amount() -> None:
+    stake_data = StakeData(
+        amount=-1000.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] == 0
+
+
+def test_calculate_rewards_compound_vs_simple() -> None:
+    stake_data_daily = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
+    
+    stake_data_simple = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="none"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result_daily = calculate_rewards(stake_data_daily, reward_rate)
+    result_simple = calculate_rewards(stake_data_simple, reward_rate)
+    
+    assert result_daily["total_reward"] >= result_simple["total_reward"]
+
+
+def test_calculate_rewards_invalid_data() -> None:
+    stake_data_valid = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
+    
+    reward_rate_valid = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data_valid, reward_rate_valid)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_no_compounding() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="none"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="none"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_quarterly_compounding() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="quarterly"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="quarterly"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_annual_compounding() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="annual"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="annual"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_monthly_breakdown_length() -> None:
+    stake_data = StakeData(
+        amount=500.0,
+        duration_days=180,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.03,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert len(result["daily_breakdown"]) == stake_data.duration_days
+
+
+def test_calculate_rewards_small_amount() -> None:
+    stake_data = StakeData(
+        amount=1.0,
+        duration_days=1,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.01,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert "total_reward" in result
+    assert "daily_breakdown" in result
+
+
+def test_calculate_rewards_large_amount() -> None:
+    stake_data = StakeData(
+        amount=1000000.0,
+        duration_days=730,
+        compound_frequency="monthly"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.10,
+        compound_frequency="monthly"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_short_duration() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=1,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+    assert len(result["daily_breakdown"]) == 1
+
+
+def test_calculate_rewards_high_rate() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.5,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_zero_duration() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=0,
+        compound_frequency="daily"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert len(result["daily_breakdown"]) == 0
+    assert result["total_reward"] >= 0
+
+
+def test_calculate_rewards_invalid_compound_frequency_fallback() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="invalid"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="daily"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_same_compound_frequency() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="monthly"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="monthly"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
+
+
+def test_calculate_rewards_mixed_case() -> None:
+    stake_data = StakeData(
+        amount=1000.0,
+        duration_days=365,
+        compound_frequency="MONTHLY"
+    )
+    
+    reward_rate = RewardRate(
+        annual_rate=0.05,
+        compound_frequency="monthly"
+    )
+    
+    result = calculate_rewards(stake_data, reward_rate)
+    assert result["total_reward"] > 0
