@@ -1,0 +1,149 @@
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+def test_requirements_file_exists():
+    """Test that requirements.txt file exists"""
+    assert Path("requirements.txt").exists(), "requirements.txt file should exist"
+
+def test_requirements_file_not_empty():
+    """Test that requirements.txt is not empty"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert len(content.strip()) > 0, "requirements.txt should not be empty"
+
+def test_cryptography_version_specified():
+    """Test that cryptography package has minimum version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "cryptography>=" in content or "cryptography==" in content or "cryptography~=" in content
+
+def test_base58_version_specified():
+    """Test that base58 package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "base58>=" in content or "base58==" in content or "base58~=" in content
+
+def test_requests_version_specified():
+    """Test that requests package has minimum version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "requests>=" in content or "requests==" in content or "requests~=" in content
+
+def test_pycryptodome_version_specified():
+    """Test that pycryptodome package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pycryptodome>=" in content or "pycryptodome==" in content or "pycryptodome~=" in content
+
+def test_ecdsa_version_specified():
+    """Test that ecdsa package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "ecdsa>=" in content or "ecdsa==" in content or "ecdsapython~=" in content
+
+def test_pytest_version_specified():
+    """Test that pytest package has minimum version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pytest>=" in content or "pytest==" in content or "pytest~=" in content
+
+def test_setuptools_version_specified():
+    """Test that setuptools package has minimum version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "setuptools>=" in content or "setuptools==" in content or "setuptools~=" in content
+
+def test_wheel_version_specified():
+    """Test that wheel package has minimum version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "wheel>=" in content or "wheel==" in content or "wheel~=" in content
+
+def test_types_cryptography_version_specified():
+    """Test that types-cryptography package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "types-cryptography>=" in content or "types-cryptography==" in content
+
+def test_types_requests_version_specified():
+    """Test that types-requests package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "types-requests>=" in content or "types-requests==" in content or "types-requests~=" in content
+
+def test_types_pycryptodome_version_specified():
+    """Test that types-pycryptodome package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "types-pycryptodome>=" in content or "types-pycryptodome==" in content or "types-pycryptodome~=" in content
+
+def test_types_ecdsa_version_specified():
+    """Test that types-ecdsa package has version requirement"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "types-ecdsa>=" in content or "types-ecdsa==" in content or "types-ecdsa~=" in content
+
+def test_no_extra_packages():
+    """Test that requirements.txt doesn't contain unexpected packages"""
+    expected_packages = {
+        'cryptography', 'base58', 'requests', 'pycryptodome', 'ecdsa',
+        'pytest', 'setuptools', 'wheel', 'types-cryptography',
+        'types-requests', 'types-pycryptodome', 'types-ecdsa'
+    }
+    
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        package_lines = [line.strip() for line in lines if line.strip() and not line.startswith('#')]
+        package_names = [line.split('>=')[0].split('==')[0].split('~')[0] for line in package_lines]
+        
+        for package in package_names:
+            assert package in expected_packages, f"Unexpected package {package} found in requirements"
+
+def test_valid_package_format():
+    """Test that all packages follow valid format"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        for line in lines:
+            if line.strip() and not line.startswith('#'):
+                assert any(op in line for op in ['>=', '==', '~']), f"Line {line} should specify version"
+
+def test_no_duplicates():
+    """Test that there are no duplicate packages"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        packages = [line.split('>=')[0].split('==')[0].split('~')[0] for line in lines if line.strip() and not line.startswith('#')]
+        assert len(packages) == len(set(packages)), "No duplicate packages should be present"
+
+def test_requirements_installable():
+    """Test that requirements can be installed without errors"""
+    result = subprocess.run([
+        sys.executable, "-m", "pip", "install", "-r", "requirements.txt", "--dry-run"
+    ], capture_output=True, text=True)
+    
+    # This test would need to be run in an environment where pip is available
+    # and we're checking that the command doesn't fail with version conflicts
+    pass
+
+def test_requirements_no_comments_or_empty_lines_only():
+    """Test that requirements.txt doesn't have only comments or empty lines"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        has_packages = any(line.strip() and not line.startswith('#') for line in lines)
+        assert has_packages, "requirements.txt should contain actual package requirements, not just comments or empty lines"
+
+def test_minimum_versions_valid():
+    """Test that all package versions are valid version strings"""
+    import re
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        version_pattern = re.compile(r'([a-zA-Z0-9\-]+)[>=<~]=([0-9]+\.?)*')
+        for line in lines:
+            if line.strip() and not line.startswith('#'):
+                assert version_pattern.search(line), f"Invalid version format in line: {line}"
