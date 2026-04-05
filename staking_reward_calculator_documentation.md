@@ -1,3 +1,3 @@
 # Staking Reward Calculator Documentation Framework
 ...
-## 7. Validator Comparison Framework
+## 9. User Interface Design
