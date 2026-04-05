@@ -2,71 +2,84 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main ]
   pull_request:
-    branches: [main, develop]
-
-env:
-  PYTHON_VERSION: 3.11
-  NODE_VERSION: "18"
+    branches: [ main ]
 
 jobs:
-  ci:
-    name: CI Pipeline
+  test:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-      #     python-version: 3.11
-      #     cache: 'pip'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Set up Redis
-        uses: actions/setup-redis@v1
-        with:
-          redis-version: "6.2"
-
-      - name: Set up Docker
-        uses: docker/setup-docker@v1
-
-      - name: Start Redis
-        run: |
-          redis-server &
-
-      - name: Run tests
-        run: |
-          pytest
-
-      - name: Lint code
-        run: |
-          flake8
-
-      - name: Build Docker image
-        run: |
-          docker build -t staking-reward-calculator .
-
-      - name: Build and push Docker image
-        run: |
-          docker build -t staking-reward-calculator .
-
-      - name: Push to Docker Hub
-        run: |
-          docker push staking-reward-calculator
-
+    strategy:
+      matrix:
+        python-version: [3.9]
+    
     services:
-      redis:
-        image: redis:latest
-        ports:
-          - 6379
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
         options: >-
-          --name redis
-          --network host
-          redis
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov black flake8
+
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Format check with black
+      run: |
+        black --check .
+
+    - name: Run tests with pytest
+      run: |
+        pytest --cov=app --cov-report=xml
+
+    - name: Build frontend assets
+      run: |
+        # If there are build steps for frontend (e.g., bundling JS/CSS)
+        echo "No specific build step required for this Flask app"
+
+    - name: Docker build
+      if: github.event_name == 'push'
+      run: |
+        docker build -t staking-reward-calculator:latest .
+      
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
