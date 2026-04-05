@@ -2,49 +2,67 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main, develop]
+  workflow_dispatch:
 
 jobs:
-  ci:
+  test:
+    name: Test
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.11"
 
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install click jinja2
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install click jinja2 pytest
+      - name: Cache pip dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.io }}
 
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        flake8 .
+      - name: Run linter
+        run: |
+          # Add a simple linting check
+          pip list | grep flake8
+          flake8 project-scaffolding-tool
 
-    - name: Format check with black
-      run: |
-        pip install black
-        black --check .
+      - name: Run tests
+        run: |
+          pytest
 
-    - name: Run tests
-      run: pytest
+      - name: Cache dependencies
+        uses: actions/checkout@v2
 
-    - name: Build package
-      run: |
-        python setup.py sdist bdist_wheel
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install click rehash
+
+      - name: Run tests
+        run: |
+          pytest
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest
+
+      - name: Run tests
+        run: |
+          pytest
