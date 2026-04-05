@@ -1,5 +1,12 @@
-click
-matplotlib
-pandas
+fastapi
+uvicorn
+pydantic
 requests
+pandas
 numpy
+sqlalchemy
+redis
+rclpy
+react
+axios
+chart.js
