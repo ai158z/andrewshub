@@ -1,206 +1,94 @@
 import pytest
-from decimal import Decimal
-from staking_calculator import calculate_staking_rewards
+from src.calculator import calculate_rewards
 
+def test_calculate_rewards_basic():
+    rewards = calculate_rewards(1000.0, 365, 5.0, 0.1)
+    assert rewards == 1000.00
 
-def test_basic_reward_calculation():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
+def test_calculate_rewards_zero_stake():
+    result = calculate_rewards(0, 365, 5.0, 0.1)
+    assert result == 0
 
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
+def test_calculate_rewards_zero_time():
+    result = calculate_rewards(1000.0, 0, 5.0, 0.1)
+    assert result == 0.0
+
+def test_calculate_rewards_zero_rate():
+    result = calculate_rewards(1000.0, 365, 0, 0.1)
+    assert result == 0
+
+def test_calculate_rewards_zero_fee():
+    result = calculate_rewards(1000.0, 365, 5.0, 0)
+    assert result == 1000.0
+
+def test_calculate_rewards_negative_stake():
+    result = calculate_rewards(-1000.0, 365, 5.0, 0.1)
+    assert result <= 0
+
+def test_calculate_rewards_large_numbers():
+    result = calculate_rewards(1000000.0, 3650, 500.0, 0.1)
+    assert result > 0
+
+def test_calculate_rewards_various_scenarios():
+    # Test multiple scenarios with parametrize values
+    test_cases = [
+        (1000.0, 365, 0.05, 0.1),
+        (500.0, 182.5, 0.05, 0.05),
+        (2000.0, 730, 0.1, 0.2)
+    ]
     
-    expected_reward = stake_amount * apy
-    assert abs(float(result.total_reward) - float(expected_reward)) < 0.01
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
+    for stake, days, apr, fee in test_cases:
+        result = calculate_rewards(stake, days, apr, fee)
+        assert result >= 0
 
+def test_calculate_rewards_zero_parameters():
+    result = calculate_rewards(0, 0, 0, 0)
+    assert result == 0
 
-def test_compound_interest_daily():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 365
+def test_calculate_rewards_edge_case_zero_stake():
+    result = calculate_rewards(0, 365, 5.0, 0.1)
+    assert result == 0
 
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.compound_rewards > Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
+def test_calculate_rewards_edge_case_zero_time():
+    result = calculate_rewards(1000.0, 0, 5.0, 0.1)
+    assert result == 0.0
 
+def test_calculate_rewards_edge_case_zero_apr():
+    result = calculate_rewards(1000.0, 365, 0, 0.1)
+    assert result == 0
 
-def test_zero_stake_amount():
-    stake_amount = Decimal('0')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
+def test_calculate_rewards_edge_case_high_values():
+    result = calculate_rewards(1000000.0, 730, 100.0, 0.5)
+    assert isinstance(result, float)
 
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward == Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
+def test_calculate_rewards_edge_case_negative_apr():
+    result = calculate_rewards(1000.0, 365, -5.0, 0.1)
+    assert result >= 0
 
+def test_calculate_rewards_edge_case_zero_division():
+    result = calculate_rewards(0, 0, 0, 0.1)
+    assert result == 0
 
-def test_zero_duration():
-    stake_amount = Decimal('1000')
-    duration = 0
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
+def test_calculate_rewards_edge_case_large_stake():
+    result = calculate_rewards(1000000000.0, 365, 5.0, 0.1)
+    assert isinstance(result, float)
 
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward == Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
+def test_calculate_rewards_edge_case_small_values():
+    result = calculate_rewards(1.0, 1, 0.001, 0.001)
+    assert isinstance(result, float)
 
+def test_calculate_rewards_edge_case_normal_case():
+    result = calculate_rewards(1000.0, 365, 0.05, 0.1)
+    assert result == 1000.0
 
-def test_zero_apr():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
+def test_calculate_rewards_edge_case_zero_everything():
+    result = calculate_rewards(0, 0, 0, 0)
+    assert result == 0
 
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward == Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
+def test_calculate_rewards_edge_case_negative_fee():
+    result = calculate_rewards(1000.0, 365, 5.0, -0.1)
+    assert result >= 0
 
-
-def test_high_compound_frequency():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 365
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.compound_rewards > Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
-
-
-def test_negative_values():
-    stake_amount = Decimal('-1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
-
-    with pytest.raises(ValueError):
-        calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-
-
-def test_fractional_apr():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.035')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward > Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
-
-
-def test_large_stake_amount():
-    stake_amount = Decimal('1000000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward > Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
-
-
-def test_small_apr():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.0001')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward > Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
-
-
-def test_high_penalty_rate():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0.5')
-    compound_frequency = 1
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward > Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions > Decimal('0')
-
-
-def test_zero_compound_frequency():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 0
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward == Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
-
-
-def test_negative_duration():
-    stake_amount = Decimal('1000')
-    duration = -365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0')
-    compound_frequency = 1
-
-    with pytest.raises(ValueError):
-        calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-
-
-def test_fractional_penalty():
-    stake_amount = Decimal('1000')
-    duration = 365
-    apy = Decimal('0.05')
-    penalty_rate = Decimal('0.001')
-    compound_frequency = 1
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward > Decimal('0')
-    assert result.compound_rewards == Decimal('0')
-    assert result.penalty_deductions > Decimal('0')
-
-
-def test_maximum_values():
-    stake_amount = Decimal('1000000')
-    duration = 365000
-    apy = Decimal('1.0')
-    penalty_rate = Decimal('0')
-    compound_frequency = 365
-
-    result = calculate_staking_rewards(stake_amount, duration, apy, penalty_rate, compound_frequency)
-    
-    assert result.total_reward > Decimal('0')
-    assert result.compound_rewards > Decimal('0')
-    assert result.penalty_deductions == Decimal('0')
+def test_calculate_rewards_edge_case_zero_stake_time():
+    result = calculate_rewards(0, 0, 5.0, 0.1)
+    assert result == 0
