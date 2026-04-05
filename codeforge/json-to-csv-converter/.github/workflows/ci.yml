@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        # Install Python dependencies
+        run: |
+          sudo apt update
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+        shell: bash
+      - name: Run linting
+        run: |
+          python3 -m flake8 --version
+          python3 -m flake8 . --count
+        shell: bash
+      - name: Run tests
+        run: |
+          python3 -m pytest --version
+          python3 -m pytest
+        shell: bash
+      - name: Run build
+        run: |
+          python3 setup.py sdist bdist_wheel
+        shell: bash
+      - name: Build
+        run: |
+          python3 setup.py sdist bdist_wheel
+        shell: bash
+      - name: Run tests
+        run: |
+          python3 -m pytest --version
+          python3 -m pytest
+        shell: bash
+      - name: Run build
+        run: |
+          python3 setup.py build
+        shell: bash
+      - name: Run tests
+        run: |
+          python3 -m pytest --version
+          python3 -m pytest --tb=short
+        shell: bash
+    env:
+      PYTHONPATH: ${{ env.PYTHONPATH }}:.
+    steps:
+      - name: Run tests
+        run: |
+          python3 -m pytest --version
+          python3 -m pytest --tb=short
+        shell: bash
+      - name: Run build
+        run: |
+          python3 setup.py build
+        shell: bash
+      - name: Run tests
+        run: |
+          python3 -m pytest --version
+          python3 -m pytest --tb=short
+        shell: bash
