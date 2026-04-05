@@ -1,0 +1,5 @@
+pysha3>=1.0.0
+cryptography>=3.4.0
+rclpy>=3.0.0
+pytest>=6.0.0
+pytest-benchmark>=3.4.0
