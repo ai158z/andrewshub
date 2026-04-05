@@ -1,0 +1,143 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import App from './App'; // Adjust path as needed
+
+// Mock CSS module
+jest.mock('./App.css', () => ({}));
+
+describe('App.css Module Tests', () => {
+  test('should have correct primary color variable', () => {
+    const style = getComputedStyle(document.documentElement);
+    const primaryColor = style.getPropertyValue('--primary-color').trim();
+    expect(primaryColor).toBe('#2563eb');
+  });
+
+  test('should have correct font family stack', () => {
+    const style = getComputedStyle(document.body);
+    const fontFamily = style.fontFamily;
+    expect(fontFamily).toContain('Inter');
+    expect(fontFamily).toContain('-apple-system');
+  });
+
+  test('should apply box-sizing border-box globally', () => {
+    expect(document.documentElement).toHaveStyle({
+      'box-sizing': 'border-box'
+    });
+  });
+
+  test('should have correct background color on body', () => {
+    const style = getComputedStyle(document.body);
+    const bgColor = style.backgroundColor;
+    expect(bgColor).toBe('rgb(243, 244, 246)');
+  });
+
+  test('should apply card styles correctly', () => {
+    render(<div data-testid="test-card" className="card" />);
+    const card = screen.getByTestId('test-card');
+    expect(card).toHaveClass('card');
+  });
+
+  test('should apply correct box shadow on card hover', () => {
+    render(<div data-testid="test-card" className="card" />);
+    const card = screen.getByTestId('test-card');
+    expect(card).toHaveStyle('box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1)');
+  });
+
+  test('should apply correct header gradient', () => {
+    render(<div data-testid="test-header" className="app-header" />);
+    const header = screen.getByTestId('test-header');
+    expect(header).toHaveClass('app-header');
+  });
+
+  test('should have correct grid layout for dashboard', () => {
+    const element = document.createElement('div');
+    element.className = 'dashboard-grid';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.display).toBe('grid');
+  });
+
+  test('should apply correct form control styles', () => {
+    render(<input data-testid="test-input" className="form-control" />);
+    const input = screen.getByTestId('test-input');
+    expect(input).toHaveClass('form-control');
+  });
+
+  test('should apply focus styles to form control', () => {
+    render(<input data-testid="test-input" className="form-control" />);
+    const input = screen.getByTestId('test-input');
+    expect(input).toHaveClass('form-control');
+  });
+
+  test('should apply correct button primary styles', () => {
+    render(<button data-testid="test-btn" className="btn btn-primary" />);
+    const button = screen.getByTestId('test-btn');
+    expect(button).toHaveClass('btn');
+    expect(button).toHaveClass('btn-primary');
+  });
+
+  test('should apply correct button hover styles', () => {
+    render(<button data-testid="test-btn" className="btn btn-primary" />);
+    const button = screen.getByTestId('test-btn');
+    expect(button).toHaveStyle('transition: all 0.3s ease');
+  });
+
+  test('should have correct stat item padding', () => {
+    const element = document.createElement('div');
+    element.className = 'stat-item';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.padding).toBe('1rem');
+  });
+
+  test('should apply correct notification banner success styles', () => {
+    const element = document.createElement('div');
+    element.className = 'notification-banner';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.position).toBe('fixed');
+  });
+
+  test('should apply correct notification banner error styles', () => {
+    const element = document.createElement('div');
+    element.className = 'notification-banner error';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.background).toBe('rgb(239, 68, 68)');
+  });
+
+  test('should apply correct notification banner warning styles', () => {
+    const element = document.createElement('div');
+    element.className = 'notification-banner warning';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.background).toBe('rgb(245, 158, 11)');
+  });
+
+  test('should have correct border radius variable', () => {
+    const style = getComputedStyle(document.documentElement);
+    const borderRadius = style.getPropertyValue('--border-radius').trim();
+    expect(borderRadius).toBe('8px');
+  });
+
+  test('should have correct box shadow variable', () => {
+    const style = getComputedStyle(document.documentElement);
+    const boxShadow = style.getPropertyValue('--box-shadow').trim();
+    expect(boxShadow).toBe('0 4px 6px -1px rgba(0, 0, 0, 0.1)');
+  });
+
+  test('should have correct transition variable', () => {
+    const style = getComputedStyle(document.documentElement);
+    const transition = style.getPropertyValue('--transition').trim();
+    expect(transition).toBe('all 0.3s ease');
+  });
+
+  test('should apply responsive grid for large screens', () => {
+    const element = document.createElement('div');
+    element.className = 'dashboard-grid';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.display).toBe('grid');
+  });
+
+  test('should apply mobile padding for app container', () => {
+    const element = document.createElement('div');
+    element.className = 'app-container';
+    const computedStyle = getComputedStyle(element);
+    expect(computedStyle.padding).toBe('1rem');
+  });
+});
