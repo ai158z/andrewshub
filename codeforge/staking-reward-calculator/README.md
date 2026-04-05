@@ -1,223 +1,200 @@
 # Staking Reward Calculator
 
-A fullstack web application for calculating staking rewards with real-time network data integration, time-based projections, and ROS2 sensor compatibility.
+A fullstack Python-based staking reward calculator with Flask web interface that calculates compound interest rewards for cryptocurrency staking with interactive visualizations.
 
 ## Features
 
-- **Staking Calculations**: Real-time staking reward calculations with customizable parameters
-- **Network Data Integration**: Live blockchain network statistics and data
-- **Time-based Projections**: Future reward projections with visual charts
-- **ROS2 Compatibility**: Integration with ROS2 sensor data for enhanced functionality
-- **Real-time Price Data**: Cryptocurrency price oracle integration
-- **Responsive UI**: Modern React frontend with interactive visualizations
+- **Compound Interest Calculation**: Implements A = P(1 + r)^t formula for staking rewards
+- **Responsive Web Interface**: User-friendly HTML form for inputting staking parameters
+- **Data Visualization**: Chart.js integration for reward growth visualization
+- **REST API**: Programmatic access to calculation endpoints
+- **Mock Data Support**: Fallback demonstration data when no real data available
+- **Comprehensive Testing**: Unit tests for calculations and API endpoints
+- **Documentation**: Complete setup and usage instructions
 
 ## Prerequisites
 
 - Python 3.8+
-- Node.js 14+
-- Docker and Docker Compose (for containerized deployment)
-- Redis server (included in Docker setup)
+- pip package manager
+- Virtual environment (recommended)
 
 ## Installation
 
-### Backend Setup
-
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/your-username/staking-reward-calculator.git
 cd staking-reward-calculator
 
-# Install Python dependencies
-pip install -r backend/requirements.txt
-
-# Install Node.js dependencies
-cd frontend
-npm install
-```
-
-### Environment Variables
-
-Create a `.env` file based on `backend/.env.example`:
-
-```env
-# Database
-DATABASE_URL=sqlite:///./test.db
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# API Keys
-BLOCKCHAIN_API_KEY=your_api_key_here
-PRICE_ORACLE_API_KEY=your_price_api_key_here
-
-# ROS2 Settings
-ROS2_ENABLED=false
-```
-
-### Frontend Setup
-
-```bash
-# Navigate to frontend directory
-cd frontend
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-npm install
+pip install flask
 
-# Development
-npm start
+# Or install from requirements.txt
+pip install -r requirements.txt
+```
 
-# Production build
-npm run build
+## Project Setup
+
+```bash
+# Set up environment variables (if needed)
+# Create .env file in project root
+echo "FLASK_ENV=development" > .env
+```
+
+## Usage
+
+### Web Interface
+
+Start the Flask application:
+
+```bash
+python src/app.py
+```
+
+Access the application at `http://localhost:5000`
+
+### API Endpoints
+
+```bash
+# Calculate staking rewards
+POST /api/calculate
+Content-Type: application/json
+
+{
+    "stake_amount": 1000,
+    "apr": 0.08,
+    "duration": 365
+}
+```
+
+### Example API Response
+
+```json
+{
+    "input": {
+        "stake_amount": 1000,
+        "apr": 0.08,
+        "duration": 365
+    },
+    "reward": 80.0,
+    "total_value": 1080.0
+}
 ```
 
 ## Project Structure
 
 ```
 staking-reward-calculator/
-├── backend/
-│   ├── src/
-│   │   ├── api/
-│   │   ├── models/
-│   │   ├── services/
-│   │   ├── utils/
-│   │   └── main.py
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── .env.example
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   ├── api/
-    │   └── App.js
-    └── package.json
-```
-
-## Usage
-
-### Running with Docker Compose
-
-```bash
-# Start all services
-cd backend
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-```
-
-### API Endpoints
-
-#### Staking Calculations
-```
-POST /api/calculator/rewards
-```
-Calculate staking rewards based on input parameters.
-
-#### Network Data
-```
-GET /api/network/stats
-GET /api/network/validators
-```
-
-#### Projections
-```
-GET /api/projections/future
-GET /api/projections/historical
+├── src/
+│   ├── app.py                 # Flask application entry point
+│   ├── calculator.py          # Compound interest calculation logic
+│   ├── routes/
+│   │   ├── api.py           # API route handlers
+│   │   └── web.py          # Web interface routes
+│   └── tests/
+│       ├── test_calculator.py        # Unit tests for calculations
+│       └── test_api_endpoints.py   # Unit tests for API endpoints
+├── static/
+│   └── chart.js            # Chart.js library
+├── templates/                # HTML templates
+├── requirements.txt          # Python dependencies
+└── README.md              # Project documentation
 ```
 
 ## API Documentation
 
-### Example Request
-```bash
-curl -X POST "http://localhost:8000/api/calculator/rewards" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "stake_amount": 1000,
-    "duration_days": 365,
-    "compound_frequency": "daily"
-  }'
-```
+### GET `/`
 
-### Response
+Returns the web interface for staking calculator
+
+### POST `/api/calculate`
+
+Calculate staking rewards
+
+**Request Body:**
 ```json
 {
-  "total_rewards": 150.50,
-  "apy": 15.5,
-  "projected_rewards": [
-    {"day": 30, "reward": 12.25},
-    {"day": 60, "reward": 25.75}
-  ]
+    "stake_amount": number,
+    "apr": number,
+    "duration": number
+}
+```
+
+**Response:**
+```json
+{
+    "input": {
+        "stake_amount": number,
+        "apr": number,
+        "duration": number
+    },
+    "reward": number,
+    "total_value": number
 }
 ```
 
 ## Testing
 
 ```bash
-# Backend tests
-cd backend
-python -m pytest tests/
+# Run all tests
+python -m pytest src/tests/
 
-# Frontend tests
-cd frontend
-npm test
+# Run specific test file
+python -m pytest src/tests/test_calculator.py
 
-# Integration tests
-npm run test:integration
+# Run with coverage
+python -m pytest --cov=src src/tests/
 ```
 
 ## Deployment
 
-### Production Deployment
+### Docker Deployment
 
-1. **Build Docker Images**
-```bash
-# Backend
-cd backend
-docker build -t staking-calculator-backend .
+Create `Dockerfile`:
 
-# Frontend
-cd frontend
-npm run build
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "src/app.py"]
 ```
 
-2. **Environment Configuration**
-```bash
-# Set production environment variables
-export NODE_ENV=production
-export PORT=8080
-```
+### Docker Compose
 
-3. **Docker Compose for Production**
 ```yaml
 version: '3.8'
 services:
-  backend:
-    build: ./backend
+  staking-calculator:
+    build: .
     ports:
-      - "8000:8000"
+      - "5000:5000"
     environment:
-      - NODE_ENV=production
-    depends_on:
-      - redis
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
+      - FLASK_ENV=production
 ```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FLASK_ENV` | Flask environment | `production` |
+| `FLASK_DEBUG` | Debug mode | `False` |
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-```
 MIT License
-
-Copyright (c) 2024 Staking Reward Calculator
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -236,4 +213,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```
