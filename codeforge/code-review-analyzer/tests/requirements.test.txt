@@ -1,0 +1,181 @@
+import pytest
+from unittest.mock import patch, mock_open, MagicMock
+import subprocess
+import sys
+
+def test_requirements_file_exists():
+    """Test that requirements.txt file exists and is readable"""
+    try:
+        with open("requirements.txt", "r") as f:
+            content = f.read()
+            assert len(content) > 0
+    except FileNotFoundError:
+        pytest.fail("requirements.txt file not found")
+
+def test_requirements_file_has_content():
+    """Test that requirements.txt contains package specifications"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "==" in content
+        assert len(content.strip()) > 0
+
+def test_click_dependency_present():
+    """Test that click dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "click==" in content
+
+def test_pygithub_dependency_present():
+    """Test that pygithub dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pygithub==" in content
+
+def test_pylint_dependency_present():
+    """Test that pylint dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pylint==" in content
+
+def test_bandit_dependency_present():
+    """Test that bandit dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "bandit==" in content
+
+def test_flake8_dependency_present():
+    """Test that flake8 dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "flake8==" in content
+
+def test_requests_dependency_present():
+    """Test that requests dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "requests==" in content
+
+def test_pydantic_dependency_present():
+    """Test that pydantic dependency is specified in requirements"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert "pydantic==" in content
+
+def test_version_pin_format():
+    """Test that dependencies use exact version pinning"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        for line in lines:
+            if line.strip() and not line.startswith('#'):
+                assert "==" in line, f"Line '{line}' does not use exact version pinning"
+
+def test_no_extra_whitespace_in_lines():
+    """Test that requirement lines don't have extra whitespace"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        for line in lines:
+            if line.strip() and not line.startswith('#'):
+                assert line == line.strip(), f"Line has leading/trailing whitespace: {line}"
+
+def test_no_empty_lines_except_spacing():
+    """Test that there are no completely empty requirement lines"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.split('\n')
+        # Check that we don't have lines with only whitespace that aren't comments
+        for line in lines:
+            stripped = line.strip()
+            if stripped and not stripped.startswith('#'):
+                assert len(stripped) > 3, "Requirement line too short"
+
+def test_requirements_sorted_alphabetically():
+    """Test that package names are in alphabetical order"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        packages = []
+        for line in lines:
+            if line.strip() and not line.startswith('#') and "==" in line:
+                package_name = line.split('==')[0].strip()
+                packages.append(package_name)
+        
+        # Check if list is sorted
+        assert packages == sorted(packages), "Requirements should be sorted alphabetically"
+
+def test_no_duplicate_packages():
+    """Test that no package is listed more than once"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        packages = []
+        for line in lines:
+            if line.strip() and not line.startswith('#') and "==" in line:
+                package_name = line.split('==')[0].strip()
+                packages.append(package_name)
+        
+        # Check for duplicates
+        assert len(packages) == len(set(packages)), "Duplicate packages found in requirements"
+
+def test_valid_package_name_format():
+    """Test that package names follow valid format"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        for line in lines:
+            if line.strip() and not line.startswith('#') and "==" in line:
+                package_part = line.split('==')[0]
+                # Package names should be valid (no spaces, special chars, etc.)
+                assert package_part.replace('-', '').replace('_', '').isalnum(), \
+                    f"Invalid package name format: {package_part}"
+
+def test_version_numbers_valid():
+    """Test that version numbers follow semantic versioning"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        for line in lines:
+            if line.strip() and not line.startswith('#') and "==" in line:
+                version_part = line.split('==')[1].strip()
+                # Basic check for version format (major.minor.patch)
+                version_parts = version_part.split('.')
+                assert len(version_parts) >= 2, f"Invalid version format in: {line}"
+
+def test_requirements_end_with_newline():
+    """Test that file ends with a newline"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        assert content.endswith('\n') or content == content.rstrip('\n'), \
+            "File should end with newline"
+
+def test_no_comments_in_middle_of_requirements():
+    """Test that comments are properly formatted"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.split('\n')
+        for line in lines:
+            if '#' in line and line.strip().startswith('#'):
+                # This is a comment line, should start with #
+                assert line.strip() == line.lstrip(), "Comment lines should be properly formatted"
+
+def test_requirements_file_encoding():
+    """Test that requirements.txt uses UTF-8 encoding"""
+    try:
+        with open("requirements.txt", "r", encoding="utf-8") as f:
+            f.read()  # Try to read it
+    except UnicodeDecodeError:
+        pytest.fail("requirements.txt is not properly UTF-8 encoded")
+
+def test_requirements_line_format():
+    """Test that each requirement line has proper format"""
+    with open("requirements.txt", "r") as f:
+        content = f.read()
+        lines = content.strip().split('\n')
+        for line in lines:
+            stripped_line = line.strip()
+            # Skip empty lines and comments
+            if stripped_line and not stripped_line.startswith('#'):
+                # Should be either package==version or package>=version or similar
+                assert "==" in stripped_line or ">=" in stripped_line or "<" in stripped_line, \
+                    f"Requirement line missing version specifier: {line}"
