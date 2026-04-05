@@ -1,3 +1,3 @@
 # Staking Reward Calculator Documentation Framework
 ...
-## 11. Deployment Considerations
+## 12. Maintenance and Updates
