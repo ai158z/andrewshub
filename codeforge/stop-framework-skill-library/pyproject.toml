@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stop-framework-skill-library"
+version = "0.1.0"
+description = "A framework for skill library management with self-improvement capabilities"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "STOP Framework Team", email = "contact@stopframework.com" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pydantic>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "alembic>=1.10.0",
+    "cryptography>=3.0.0",
+    "pyyaml>=6.0",
+    "jsonschema>=4.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "flake8>=6.0",
+    "mypy>=1.0",
+    "sphinx>=6.0",
+    "sphinx-rtd-theme>=1.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/stop-framework/skill-library"
+"Bug Reports" = "https://github.com/stop-framework/skill-library/issues"
+"Source" = "https://github.com/stop-framework/skill-library"
+
+[tool.setuptools]
+package-dir = {"" = "stop_skill_library"}
+packages = ["stop_skill_library"]
+
+[tool.setuptools.package-data]
+stop_skill_library = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --strict-markers"
+markers = [
+    "unit: marks tests as unit tests",
+    "integration: marks tests as integration tests",
+    "slow: marks tests as slow running"
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py39', 'py310', 'py311']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.tox
+  | build
+  | dist
+  | docs
+)/
+'''
+
+[tool.mypy]
+python_version = "3.9"
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+mypy_path = "stubs"
+files = ["stop_skill_library/**/*.py"]
+
+[tool.coverage.run]
+source = ["stop_skill_library"]
+omit = [
+    "tests/*",
+    "examples/*",
+    "setup.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:"
+]
