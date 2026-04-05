@@ -1,0 +1,16 @@
+{
+  "name": "agent-ops-dashboard",
+  "version": "1.0.0",
+  "description": "Develop a comprehensive dashboard system for monitoring and managing agent operations, including agent status tracking, system health metrics, and operational analytics. The system should include three dashboards: 1) Agent Dashboard for tracking heartbeat cycles, task scores, and project progress 2) Ops Dashboard for monitoring system health, error logs, and resource usage 3) System Dashboard for displaying network status, storage metrics, and blockchain integration (if applicable). Implement backend APIs to fetch data from tools like get_system_health, forge_status, and memory logs, and build a responsive frontend with visualization components.",
+  "dependencies": {
+    "fastapi": "*",
+    "uvicorn": "*",
+    "sqlalchemy": "*",
+    "psycopg2": "*",
+    "redis": "*",
+    "next": "*",
+    "react": "*",
+    "recharts": "*",
+    "axios": "*"
+  }
+}
