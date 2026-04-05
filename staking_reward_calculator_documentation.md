@@ -1,3 +1,3 @@
 # Staking Reward Calculator Documentation Framework
 ...
-## 10. Future Enhancements
+## 11. Deployment Considerations
