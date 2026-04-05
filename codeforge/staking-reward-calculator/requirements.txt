@@ -1,3 +1,5 @@
-dataclasses
-typing
-decimal
+click
+matplotlib
+pandas
+requests
+numpy
