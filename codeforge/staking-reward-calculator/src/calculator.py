@@ -1,57 +1,126 @@
 import math
-from typing import Dict, Union
-import logging
+from decimal import Decimal, getcontext, InvalidOperation
+from typing import Union
 
-logger = logging.getLogger(__name__)
+# Set precision for decimal calculations
+getcontext().prec = 50
 
-def calculate_rewards(stake_amount: float, duration: int, apy: float, 
-                     commission: float) -> Dict[str, Union[float, int]]:
+def calculate_rewards(
+    principal: Union[float, int, str], 
+    apr: Union[float, int, str], 
+    duration: Union[int, float]
+) -> dict:
     """
-    Calculate staking rewards based on stake amount, duration, APY, and commission.
+    Calculate compound interest rewards for staking.
     
     Args:
-        stake_amount: The amount of tokens to stake
-        duration: The staking duration in days
-        apy: Annual percentage yield (as a decimal, e.g. 0.05 for 5%)
-        commission: Validator commission rate (as a decimal, e.g. 0.1 for 10%)
+        principal: The initial staking amount
+        apr: Annual percentage rate (as a decimal, e.g., 0.05 for 5%)
+        duration: Time period in days
         
     Returns:
-        Dictionary containing the calculated rewards data
+        Dictionary containing principal, rewards, and total amounts
     """
-    # Validate inputs
-    if stake_amount <= 0:
-        raise ValueError("Stake amount must be positive")
-        
-    _validate_inputs(stake_amount, duration, apy, commission)
+    # Input validation
+    if principal is None or apr is None or duration is None:
+        raise ValueError("All parameters (principal, apr, duration) are required")
     
-    # Calculate reward using compound interest formula
-    # Convert APY to daily rate: (1 + apy)^(1/365) - 1
-    # But we use the effective rate after commission
-    effective_apy = apy * (1 - commission)
-    daily_rate = (1 + effective_apy) ** (1/365) - 1
-    total_reward = stake_amount * ((1 + daily_rate) ** duration - 1)
+    # Convert inputs to Decimal for precision
+    try:
+        principal = Decimal(str(principal))
+        apr = Decimal(str(apr))
+        duration = Decimal(str(duration))
+    except (ValueError, TypeError, InvalidOperation) as e:
+        raise ValueError(f"Invalid numeric input: {e}")
     
-    return {
-        'total_reward': total_reward,
-        'duration_days': duration,
-        'stake_amount': stake_amount,
-        'apy': apy,
-        'commission': commission
-    }
-
-def _validate_inputs(stake_amount: float, duration: int, apy: float, commission: float) -> None:
-    """Validate calculator inputs and raise appropriate errors."""
-    if stake_amount < 0:
-        raise ValueError("Stake amount cannot be negative")
+    # Validate input ranges
+    if principal < 0:
+        raise ValueError("Principal amount cannot be negative")
     if duration < 0:
         raise ValueError("Duration cannot be negative")
-    if apy < 0:
-        raise ValueError("APY cannot be negative")
-    if commission < 0:
-        raise ValueError("Commission cannot be negative")
-    if apy > 1:
-        raise ValueError("APY must be between 0 and 1")
-    if commission > 1:
-        raise ValueError("Commission must be between 0 and 1")
-    if duration == 0:
-        raise ValueError("Duration must be positive")
+    if apr < 0:
+        raise ValueError("APR cannot be negative")
+    
+    # Calculate compound interest
+    # Formula: A = P(1 + r/n)^(nt)
+    # For staking: A = P * e^(r*t) where continuous compounding is assumed
+    # But we'll use daily compounding for more realistic staking simulation
+    # A = P * (1 + r/365)^days
+    try:
+        daily_rate = apr / Decimal('365')
+        compound_factor = (Decimal('1') + daily_rate) ** duration
+        final_amount = principal * compound_factor
+        rewards = final_amount - principal
+        
+        return {
+            'principal': float(principal),
+            'rewards': float(rewards),
+            'total': float(final_amount),
+            'apr': float(apr),
+            'duration_days': float(duration)
+        }
+    except Exception as e:
+        raise ValueError(f"Calculation error: {e}")
+
+def calculate_apy(apr: float, compounding_frequency: int = 365) -> float:
+    """
+    Calculate APY (Annual Percentage Yield) from APR.
+    
+    Args:
+        apr: Annual Percentage Rate
+        compounding_frequency: Number of compounding periods per year (default: daily)
+        
+    Returns:
+        Annual Percentage Yield
+    """
+    try:
+        apy = (1 + apr / compounding_frequency) ** compounding_frequency - 1
+        return float(apy)
+    except Exception as e:
+        raise ValueError(f"APY calculation error: {e}")
+
+def calculate_periodic_rewards(
+    principal: Union[float, int], 
+    apr: float, 
+    periods: int, 
+    period_duration: str = "daily"
+) -> dict:
+    """
+    Calculate rewards for multiple compounding periods.
+    
+    Args:
+        principal: The initial staking amount
+        apr: Annual percentage rate
+        periods: Number of compounding periods
+        period_duration: Type of compounding period ("daily", "weekly", "monthly")
+        
+    Returns:
+        Dictionary with rewards for each period
+    """
+    if period_duration == "daily":
+        frequency = 365
+    elif period_duration == "weekly":
+        frequency = 52
+    elif period_duration == "monthly":
+        frequency = 12
+    else:
+        raise ValueError("period_duration must be 'daily', 'weekly', or 'monthly'")
+    
+    try:
+        principal = Decimal(str(principal))
+        apr = Decimal(str(apr))
+        periods = Decimal(str(periods))
+        
+        # Calculate rewards for each period
+        periodic_rate = apr / Decimal(str(frequency))
+        total = principal * ((1 + periodic_rate) ** periods)
+        rewards = total - principal
+        
+        return {
+            'principal': float(principal),
+            'rewards': float(rewards),
+            'total': float(total),
+            'periods': int(periods)
+        }
+    except Exception as e:
+        raise ValueError(f"Periodic calculation error: {e}")
