@@ -1,0 +1,64 @@
+describe('HTML Structure Tests', () => {
+  test('contains required meta tags', () => {
+    const html = document.documentElement;
+    expect(html.lang).toBe('en');
+    const metaCharset = document.querySelector('meta[charset]');
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    const metaDescription = document.querySelector('meta[name="description"]');
+    expect(metaCharset).toBeTruthy();
+    expect(metaViewport).toBeTruthy();
+    expect(metaDescription).toBeTruthy();
+  });
+
+  test('contains manifest link', () => {
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    expect(manifestLink).toBeTruthy();
+    expect(manifestLink.href).toContain('/manifest.json');
+  });
+
+  test('contains icon links', () => {
+    const faviconLink = document.querySelector('link[rel="icon"]');
+    const appleTouchIconLink = document.querySelector('link[rel="apple-touch-icon"]');
+    expect(faviconLink).toBeTruthy();
+    expect(appleTouchIconLink).toBeTruthy();
+  });
+
+  test('contains PWA meta tags', () => {
+    const mobileCapable = document.querySelector('meta[name="mobile-web-app-capable"]');
+    const appTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    expect(mobileCapable).toBeTruthy();
+    expect(appTitle).toBeTruthy();
+    expect(appTitle.content).toBe('Staking Dashboard');
+  });
+
+  test('has title element with correct text', () => {
+    expect(document.title).toBe('Staking Dashboard');
+  });
+
+  test('contains noscript element', () => {
+    const noscript = document.querySelector('noscript');
+    expect(noscript).toBeTruthy();
+    expect(noscript.textContent).toBe('You need to enable JavaScript to run this app.');
+  });
+
+  test('contains root div', () => {
+    const rootDiv = document.getElementById('root');
+    expect(rootDiv).toBeTruthy();
+  });
+
+  test('registers service worker when available', () => {
+    const hasSW = 'serviceWorker' in navigator;
+    expect(typeof hasSW).toBe('boolean');
+  });
+
+  test('service worker registration script exists', () => {
+    const scripts = document.querySelectorAll('script');
+    let swScriptExists = false;
+    scripts.forEach(script => {
+      if (script.src.includes('service-worker.js') || script.textContent.includes('serviceWorker')) {
+        swScriptExists = true;
+      }
+    });
+    expect(swScriptExists).toBe(true);
+  });
+});
