@@ -1,0 +1,104 @@
+import pytest
+from pathlib import Path
+import re
+
+def test_css_file_exists():
+    css_path = Path("frontend/src/styles/dashboard.css")
+    assert css_path.exists(), "Dashboard CSS file should exist"
+
+def test_css_has_root_variables():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ":root {" in css_content
+    assert "--dashboard-bg:" in css_content
+    assert "--primary-color:" in css_content
+    assert "--success-color:" in css_content
+    assert "--warning-color:" in css_content
+    assert "--error-color:" in css_content
+
+def test_css_has_dashboard_container():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".dashboard-container {" in css_content
+
+def test_dashboard_container_grid_properties():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "display: grid" in css_content
+    assert "grid-template-columns: repeat(3, 1fr)" in css_content
+    assert "grid-template-rows: auto 1fr auto" in css_content
+
+def test_dashboard_container_has_gap_and_padding():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "gap: 20px" in css_content
+    assert "padding: 20px" in css_content
+
+def test_dashboard_container_has_background_and_font():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "background-color: var(--dashboard-bg)" in css_content
+    assert "font-family: 'Segoe UI'" in css_content
+
+def test_agent_grid_exists():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".agent-grid {" in css_content
+
+def test_agent_grid_properties():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "display: grid" in css_content
+    assert "grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))" in css_content
+
+def test_metric_card_exists():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-card {" in css_content
+
+def test_metric_card_has_hover_state():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-card:hover {" in css_content
+
+def test_metric_card_has_transition():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "transition: all 0.3s ease" in css_content
+
+def test_metric_card_header_exists():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-card-header {" in css_content
+
+def test_metric_card_header_properties():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "font-weight: 600" in css_content
+    assert "color: var(--primary-color)" in css_content
+    assert "border-bottom: 3px solid var(--primary-color)" in css_content
+
+def test_metric_value_classes_exist():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-value {" in css_content
+    assert ".metric-value-large {" in css_content
+
+def test_metric_title_and_subtitle_exist():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-title {" in css_content
+    assert ".metric-subtitle {" in css_content
+
+def test_metric_grid_exists():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-grid {" in css_content
+
+def test_metric_grid_item_exists():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-grid-item {" in css_content
+
+def test_metric_grid_item_has_flex_properties():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "display: flex" in css_content
+    assert "flex-direction: column" in css_content
+    assert "align-items: center" in css_content
+    assert "justify-content: center" in css_content
+
+def test_metric_grid_item_text_classes_exist():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert ".metric-grid-item-text {" in css_content
+    assert ".metric-grid-item-text-small {" in css_content
+
+def test_css_has_all_color_variables():
+    css_content = Path("frontend/src/styles/dashboard.css").read_text()
+    assert "var(--primary-color)" in css_content
+    assert "var(--success-color)" in css_content
+    assert "var(--warning-color)" in css_content
+    assert "var(--error-color)" in css_content
