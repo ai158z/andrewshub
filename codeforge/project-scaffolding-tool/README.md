@@ -1,146 +1,139 @@
 # Project Scaffolding Tool
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## Description
 
-A command-line interface tool that automates project setup for common project types (web apps, CLIs, libraries) with directory structure, dependencies, and boilerplate code generation.
+A command-line tool for generating project scaffolding for multiple programming languages (Python, JavaScript, Rust) with support for popular frameworks. This tool automates the creation of directory structures, dependency files, and boilerplate code for new projects.
 
 ## Features
 
-- **CLI Interface**: Interactive command-line interface for project type selection
-- **Directory Structure**: Automatic creation of standardized project layouts
-- **Dependency Management**: Installs dependencies based on project type
-- **Boilerplate Generation**: Pre-configured starter code for multiple languages
-- **Documentation**: Automatic README and license file creation
-- **Version Control**: Git repository initialization
-- **Testing Setup**: Integrated testing framework configuration
-- **Containerization**: Dockerfile generation for containerized projects
-- **Multi-language Support**: Python, JavaScript (Node.js), and Rust project templates
-- **Extensible Architecture**: Modular design for easy language/framework additions
+- Generate project scaffolding for Python, JavaScript (Node.js), and Rust projects
+- Framework support for Express (JavaScript), Actix (Rust), and Flask (Python)
+- Template-based generation of project files and directory structures
+- Interactive CLI interface for project type selection
+- Automatic generation of README files with setup instructions
+- Docker support for consistent development environments
 
 ## Prerequisites
 
 - Python 3.8+
-- Node.js (for JavaScript projects)
-- Cargo (for Rust projects)
-- Git
+- pip (Python package installer)
+- Docker and Docker Compose (optional, for containerization)
+- 2GB+ RAM recommended
+- Internet connection for package installation
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/project-scaffolding-tool.git
+git clone <repository-url>
+
+# Change to project directory
 cd project-scaffolding-tool
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Install the package
-pip install -e .
+pip install .
+
+# OR use via command line
+python src/main.py [command] [options]
 ```
 
 ## Environment Variables
 
-No specific environment variables required for basic usage.
+The following environment variables can be configured in the `.env` file:
 
-## Usage Examples
+| Variable | Description | Required | Default |
+|----------|-------------|-----------|----------|
+| `PROJECT_TYPE` | Language/framework type | No | python |
+| `OUTPUT_DIR` | Directory to generate files | No | ./projects |
+
+Example `.env` configuration:
+```
+PROJECT_TYPE=python
+OUTPUT_DIR=./projects
+```
+
+## Usage
 
 ```bash
-# Run the scaffolding tool
-project-scaffolding-tool
+# Install the tool
+pip install project-scaffolding-tool
 
-# The tool will prompt for:
-# - Project name
-# - Project type (web app, CLI, library)
-# - Programming language
-# - Additional features (testing, Docker, etc.)
+# Run the tool
+project-scaffolding-tool
 ```
 
 ## API Documentation
 
-This is a CLI tool with the following main commands:
-
-### Main Entry Point
-```bash
-project-scaffolding-tool
-```
-
-### Interactive Prompts
-The tool will guide you through:
-1. Project name selection
-2. Project type choice
-3. Language selection
-4. Feature selection (Git, Testing, Docker)
+This tool generates a complete project structure including:
+- A `package.json` (for JavaScript) | `requirements.txt` (for Python) | `Cargo.toml` (for Rust) file
+- Directory structure (src, tests, etc.)
+- Main application file (`main.py`, `index.js`, or `lib.rs`)
+- Framework-specific files for Express, Actix, and Flask
+- README documentation with project details
 
 ## Project Structure
 
 ```
 project-scaffolding-tool/
 ├── src/
-│   └── main.py              # Main entry point
-├── scaffolding/
-│   ├── config.py             # Configuration module
-│   ├── cli.py              # CLI interface
-│   ├── generator.py          # File/directory generator
-│   └── templates/           # Project templates
-│       ├── python.py
-│       ├── javascript.py
-│       └── rust.py
-├── tests/                  # Test files
-├── requirements.txt           # Python dependencies
-└── setup.py               # Package configuration
+│   ├── main.py
+│   ├── cli.py
+│   ├── generator.py
+│   ├── templates/
+│   │   ├── python_template.py
+│   │   ├── javascript_template.py
+│   └── rust_template.py
+├── tests/
+│   └── test_generator.py
+├── requirements.txt
+├── README.md
+├── .env.example
+├── Dockerfile
+├── docker-compose.yml
+└── src/
+    └── main.py
 ```
-
-## Configuration
-
-The tool uses configuration files to determine:
-- Default project structures
-- Template settings
-- Dependency lists
-- File generation rules
 
 ## Testing
 
+To run the tests for the project, simply execute:
 ```bash
-# Run tests
 python -m pytest tests/
-
-# Run tests with coverage
-python -m pytest --cov=scaffolding tests/
 ```
 
 ## Deployment
 
-### Docker Deployment
+### Docker
 
-```dockerfile
-# Example Dockerfile for the tool
-FROM python:3.9-slim
-
-WORKDIR /app
-COPY . .
-RUN pip install -r requirements.txt
-RUN pip install -e .
-
-CMD ["project-scaffolding-tool"]
-```
-
-### Building Docker Image
+To build and run the tool using Docker:
 
 ```bash
+# Build the image
 docker build -t project-scaffolding-tool .
+
+# Run the container
 docker run -it project-scaffolding-tool
 ```
 
-## Extending the Tool
+Make sure to mount the project directory as a volume:
+```bash
+docker run -it -v $(pwd):/app project-scaffolding-tool
+```
 
-The tool is designed with an extensible architecture:
+### Deployment to Production
 
-1. **Adding New Languages**: Create new template files in `scaffolding/templates/`
-2. **Custom Project Types**: Add new configuration classes
-3. **Additional Features**: Extend the generator module
+To deploy the tool to a production environment, use the generated Docker image:
+```bash
+# Build the Docker image
+docker build -t project-scaffolding-tool . 
+
+# Run the container
+docker run -d -p 3000:3000 project-scaffolding-tool
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-MIT License permits use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software, subject to the conditions that the copyright notice and permission notice are included in all copies or substantial portions of the software.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
