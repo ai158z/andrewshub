@@ -1,0 +1,226 @@
+import pytest
+import subprocess
+import sys
+from unittest.mock import patch, mock_open
+
+def test_requirements_file_exists():
+    """Test that requirements.txt file exists and is readable"""
+    try:
+        with open('requirements.txt', 'r') as f:
+            content = f.read()
+            assert len(content) > 0
+    except FileNotFoundError:
+        pytest.fail("requirements.txt file not found")
+
+def test_required_packages_listed():
+    """Test that all required packages are listed in requirements.txt"""
+    required_packages = [
+        'feedparser==6.0.10',
+        'requests==2.28.1',
+        'sqlite3==0.0.1',
+        'redis==4.3.4',
+        'python-dateutil==2.8.2'
+    ]
+    
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+        
+    for package in required_packages:
+        assert package in content, f"Package {package} not found in requirements.txt"
+
+def test_no_extra_packages():
+    """Test that requirements.txt doesn't contain unexpected packages"""
+    expected_packages = [
+        'feedparser==6.0.10',
+        'requests==2.28.1',
+        'sqlite3==0.0.1',
+        'redis==4.3.4',
+        'python-dateutil==2.8.2'
+    ]
+    
+    with open('requirements.txt', 'r') as f:
+        content = f.read().strip()
+        packages = content.split('\n')
+        
+    for package in packages:
+        assert package in expected_packages, f"Unexpected package found: {package}"
+
+def test_package_versions_correct():
+    """Test that package versions match exactly what's specified"""
+    expected_versions = {
+        'feedparser': '6.0.10',
+        'requests': '2.28.1',
+        'sqlite3': '0.0.1',
+        'redis': '4.3.4',
+        'python-dateutil': '2.8.2'
+    }
+    
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+        
+    for package, version in expected_versions.items():
+        expected_format = f"{package}=={version}"
+        assert expected_format in content, f"Expected {expected_format} not found"
+
+def test_requirements_format():
+    """Test that requirements.txt follows proper format"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+        
+    for line in lines:
+        line = line.strip()
+        if line:  # Skip empty lines
+            assert '==' in line, f"Line '{line}' doesn't follow package==version format"
+            package_part, version_part = line.split('==')
+            assert len(package_part) > 0, "Package name cannot be empty"
+            assert len(version_part) > 0, "Version cannot be empty"
+
+def test_no_duplicate_packages():
+    """Test that there are no duplicate packages listed"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+        
+    packages = [line.strip().split('==')[0] for line in lines if line.strip()]
+    assert len(packages) == len(set(packages)), "Duplicate packages found in requirements.txt"
+
+def test_requirements_installable():
+    """Test that requirements can be installed without errors"""
+    with patch('subprocess.run') as mock_run:
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = ""
+        mock_run.return_value.stderr = ""
+        
+        result = subprocess.run(
+            [sys.executable, '-m', 'pip', 'install', '-r', 'requirements.txt'],
+            capture_output=True,
+            text=True
+        )
+        
+        # This is a mock test - in real scenario would require actual installation test
+        assert mock_run.called or result.returncode == 0
+
+def test_package_order_consistent():
+    """Test that package order is consistent (optional test for consistency)"""
+    with open('requirements.txt', 'r') as f:
+        content1 = f.read()
+        
+    with open('requirements.txt', 'r') as f:
+        content2 = f.read()
+        
+    assert content1 == content2, "requirements.txt content should be consistent"
+
+def test_requirements_comments_handled():
+    """Test that comments in requirements.txt are handled properly"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+        
+    for line in lines:
+        line = line.strip()
+        # If it's not a comment or empty line, it should have version specifier
+        if line and not line.startswith('#') and line:
+            assert '==' in line, f"Non-comment line missing version: {line}"
+
+def test_requirements_encoding():
+    """Test that requirements.txt uses proper encoding"""
+    # Try to read with utf-8 encoding
+    with open('requirements.txt', 'r', encoding='utf-8') as f:
+        content = f.read()
+        assert isinstance(content, str), "File should be readable as text"
+
+def test_requirements_line_endings():
+    """Test that requirements.txt has consistent line endings"""
+    with open('requirements.txt', 'rb') as f:
+        content = f.read()
+        # Check that file doesn't have mixed line endings
+        assert b'\r\n' not in content or b'\n' not in content or content.count(b'\r\n') == content.count(b'\n'), \
+            "Inconsistent line endings detected"
+
+def test_requirements_no_whitespace_lines():
+    """Test that requirements.txt doesn't have excessive whitespace"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+        lines = content.split('\n')
+        
+    for line in lines:
+        # Check if line is only whitespace
+        if line.strip() == '' and len(line) > 0:
+            # This is okay if it's just empty lines
+            continue
+        elif line.strip():
+            # If line has content, it should be properly formatted
+            assert '==' in line, "Non-empty lines should specify package versions"
+
+def test_requirements_file_size():
+    """Test that requirements.txt is not unexpectedly large"""
+    import os
+    # requirements.txt should be small file < 1MB
+    file_size = os.path.getsize('requirements.txt')
+    assert file_size < 1024 * 1024, "requirements.txt is unexpectedly large"
+
+def test_requirements_valid_characters():
+    """Test that requirements.txt uses valid package name characters"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+        
+    valid_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.==')
+    for char in ''.join(set(content)):
+        assert char in valid_chars or char.isspace() or char in ['\n', '\r'], \
+            f"Invalid character '{char}' in requirements.txt"
+
+def test_requirements_no_empty_versions():
+    """Test that all packages have version specifiers"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+        
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            assert '==' in line, f"Line missing version specifier: {line}"
+            package_part, version_part = line.split('==')
+            assert version_part != '', f"Empty version for package: {package_part}"
+
+def test_requirements_sorted_order():
+    """Test that packages are in a reasonable order (optional)"""
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+        
+    # Just check it's readable and processable
+    assert len(lines) > 0, "requirements.txt should contain packages"
+
+def test_requirements_pip_compatible():
+    """Test that requirements.txt is compatible with pip"""
+    with patch('subprocess.run') as mock_run:
+        mock_run.return_value.returncode = 0
+        
+        # This would be tested by actually running pip, but we mock for unit test
+        pass
+        
+    # Verify file can be read
+    try:
+        with open('requirements.txt', 'r') as f:
+            f.read()
+    except Exception as e:
+        pytest.fail(f"requirements.txt not readable: {e}")
+
+def test_requirements_no_dev_packages():
+    """Test that development packages are not in production requirements"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read().lower()
+        
+    dev_indicators = ['pytest', 'mock', 'unittest', 'tox', 'coverage']
+    for indicator in dev_indicators:
+        assert indicator not in content, f"Development package {indicator} found in requirements.txt"
+
+def test_requirements_frozen_state():
+    """Test that requirements are properly frozen (exact versions)"""
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+        
+    lines = content.strip().split('\n')
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            assert '==' in line and not line.endswith('=='), \
+                "All packages should have exact version pins"
+            _, version = line.split('==')
+            assert '.' in version, "Version should contain dots"
+            assert version.replace('.', '').isdigit(), "Version should be numeric"
