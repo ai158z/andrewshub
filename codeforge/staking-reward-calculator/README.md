@@ -1,215 +1,130 @@
 # Staking Reward Calculator
 
-A fullstack Python-based staking reward calculator with Flask web interface that calculates compound interest rewards for cryptocurrency staking with interactive visualizations.
+A command-line tool to calculate staking rewards by connecting to the blockchain for live reward rates, calculating potential earnings, and providing historical data visualization.
 
 ## Features
 
-- **Compound Interest Calculation**: Implements A = P(1 + r)^t formula for staking rewards
-- **Responsive Web Interface**: User-friendly HTML form for inputting staking parameters
-- **Data Visualization**: Chart.js integration for reward growth visualization
-- **REST API**: Programmatic access to calculation endpoints
-- **Mock Data Support**: Fallback demonstration data when no real data available
-- **Comprehensive Testing**: Unit tests for calculations and API endpoints
-- **Documentation**: Complete setup and usage instructions
+- **Live Reward Rates**: Fetches real-time staking reward rates from multiple blockchain networks.
+- **Historical Data Visualization**: Provides visualizations of historical staking performance.
+- **Flexible Input**: Supports various staking parameters like amount, duration, and network selection.
+- **Type-Safe Codebase**: Fully typed Python with Pydantic models for data validation.
+- **Docker Support**: Containerized environment for easy setup and execution.
 
 ## Prerequisites
 
-- Python 3.8+
-- pip package manager
-- Virtual environment (recommended)
+- Python 3.9+
+- Docker (optional but recommended)
+- Access to a blockchain node or API endpoint
 
 ## Installation
 
+### Using pip
+
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/staking-reward-calculator.git
-cd staking-reward-calculator
-
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install flask
-
-# Or install from requirements.txt
 pip install -r requirements.txt
 ```
 
-## Project Setup
+### Using Docker
 
 ```bash
-# Set up environment variables (if needed)
-# Create .env file in project root
-echo "FLASK_ENV=development" > .env
+docker build -t staking-reward-calculator .
+```
+
+Or using Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
+## Environment Variables
+
+Create a `.env` file based on `.env.example`:
+
+```env
+BLOCKCHAIN_NODE_URL=https://your-blockchain-node.com
+API_ENDPOINT=https://api.example.com
 ```
 
 ## Usage
 
-### Web Interface
-
-Start the Flask application:
+### CLI
 
 ```bash
-python src/app.py
+python src/main.py --amount 1000 --duration 365 --network ethereum
 ```
 
-Access the application at `http://localhost:5000`
+### Arguments
 
-### API Endpoints
+| Argument     | Description                      |
+### Example
 
 ```bash
-# Calculate staking rewards
-POST /api/calculate
-Content-Type: application/json
-
-{
-    "stake_amount": 1000,
-    "apr": 0.08,
-    "duration": 365
-}
+python src/main.py --amount 1000 --duration 365 --network ethereum
 ```
 
-### Example API Response
+## API Documentation
 
-```json
-{
-    "input": {
-        "stake_amount": 1000,
-        "apr": 0.08,
-        "duration": 365
-    },
-    "reward": 80.0,
-    "total_value": 1080.0
-}
-```
+This project does not expose a public API. All interactions are done via the CLI.
 
 ## Project Structure
 
 ```
 staking-reward-calculator/
 ├── src/
-│   ├── app.py                 # Flask application entry point
-│   ├── calculator.py          # Compound interest calculation logic
-│   ├── routes/
-│   │   ├── api.py           # API route handlers
-│   │   └── web.py          # Web interface routes
-│   └── tests/
-│       ├── test_calculator.py        # Unit tests for calculations
-│       └── test_api_endpoints.py   # Unit tests for API endpoints
-├── static/
-│   └── chart.js            # Chart.js library
-├── templates/                # HTML templates
-├── requirements.txt          # Python dependencies
-└── README.md              # Project documentation
-```
-
-## API Documentation
-
-### GET `/`
-
-Returns the web interface for staking calculator
-
-### POST `/api/calculate`
-
-Calculate staking rewards
-
-**Request Body:**
-```json
-{
-    "stake_amount": number,
-    "apr": number,
-    "duration": number
-}
-```
-
-**Response:**
-```json
-{
-    "input": {
-        "stake_amount": number,
-        "apr": number,
-        "duration": number
-    },
-    "reward": number,
-    "total_value": number
-}
+│   ├── main.py
+│   ├── staking_calculator.py
+│   ├── blockchain_client.py
+│   ├── data_fetcher.py
+│   ├── validator.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── stake_data.py
+│   │   └── reward_rate.py
+│   └── utils.py
+├── tests/
+│   ├── test_staking_calculator.py
+│   ├── test_blockchain_client.py
+│   ├── test_data_fetcher.py
+│   ├── test_validator.py
+│   └── conftest.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── .env.example
 ```
 
 ## Testing
 
+Run tests using pytest:
+
 ```bash
-# Run all tests
-python -m pytest src/tests/
-
-# Run specific test file
-python -m pytest src/tests/test_calculator.py
-
-# Run with coverage
-python -m pytest --cov=src src/tests/
+pytest tests/
 ```
 
 ## Deployment
 
-### Docker Deployment
+### With Docker
 
-Create `Dockerfile`:
+1. Build the image:
 
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-
-EXPOSE 5000
-
-CMD ["python", "src/app.py"]
+```bash
+docker build -t staking-reward-calculator .
 ```
 
-### Docker Compose
+2. Run the container:
 
-```yaml
-version: '3.8'
-services:
-  staking-calculator:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=production
+```bash
+docker run staking-reward-calculator --amount 1000 --duration 365 --network ethereum
 ```
 
-## Environment Variables
+### With Docker Compose
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FLASK_ENV` | Flask environment | `production` |
-| `FLASK_DEBUG` | Debug mode | `False` |
+1. Start services:
+
+```bash
+docker-compose up
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
