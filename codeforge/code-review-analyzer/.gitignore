@@ -1,287 +1,30 @@
-# Byte-compiled / optimized / DLL files
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Forge metadata
+.forge_meta.json
+QUALITY_REPORT.json
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
+*.egg-info/
 dist/
-downloads/
-eggs/
+build/
 .eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# PyInstaller
-#  Usually these are hidden files, but adding them as explicit ignore rule
-#  for completeness
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-.pytest_cache/
-pytestdebug.log
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# Environment variables
-.env
-
-# IDEs
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-*.sublime*
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs_vista.db
-Thumbs.db
-
-# Code Review Analyzer specific
-# Local configuration
-config.local.json
-secrets.json
-
-# Test reports
-test-reports/
-.xml
-
-# Virtual environments
 venv/
-env/
-ENV/
-
-# Docker
-*.docker.log
-
-# Coverage reports
-coverage.xml
-.coverage*
-
-# MyPy
-.mypy_cache/
-.pytype/
-
-# Ruff
-.ruff_cache/
-
-# Configuration file for the application
-code-review-analyzer.conf
-
-# Log files
-*.log.*
-
-# Temporary files
-*.tmp
-*.temp
-*~
-*.swp
-
-# Build artifacts
-*.egg-info
-build/
-dist/
-*.whl
-
-# IDE files
-*.pyc
-__pycache__/
-.pytest_cache/
-.coverage
-.pydevproject
-.ropeproject
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# OS generated files
-desktop.ini
-.DS_Store
-Thumbs.db
-
-# Editor files
-*.bak
-*.orig
-*.tmp
-*.rej
-*.patch
-
-# CI/CD
-.gitlab-ci.yml
-.travis.yml
-appveyor.yml
-.drone.yml
-.circleci/
-.github/
-.cloudbuild/
-.bamboo/
-.azure-pipelines/
-
-# Docker
-Dockerfile*
-docker-*.log
-docker/
-.dockerignore
-
-# Build artifacts
-*.deb
-*.dmg
-*.msi
-*.pkg
-*.rpm
-*.tar.gz
-*.zip
-
-# Documentation
-docs/build/
-docs/source/_build/
-docs/source/api/
-
-# Test files
-tests/test_*.py
-tests/**/test_*.py
-test_*.py
-test_*.pyc
-
-# Coverage data
-.coverage
-htmlcov/
-xmlrunner/
-junit-*.xml
-
-# IDE specific files
-*.pydevproject
-.pydevproject
-.project
-.pycharm
-.ropeproject
-.settings/
-.vscode/
-.idea/
-
-# OS specific files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs_vista.db
-Thumbs.db
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
-# Jupyter Notebook files
-.ipynb_checkpoints/
-
-# Distribution files
-*.egg-info/
-dist/
-build/
+.venv/
 *.egg
-*.whl
-*.tar.gz
-
-# Log files
-*.log
-*.log.*
-
-# Temporary files
-*.tmp
-*.temp
-*.swp
-*~
-
-# MyPy cache
-.mypy_cache/
-
-# Ruff cache
-.ruff_cache/
-
-# Pytest cache
 .pytest_cache/
-
-# Pyre type checker
-.pyre/
-
-# Bandit security report
-bandit-report.json
-
-# PyLint reports
-pylint-report.txt
-
-# Flake8 reports
-flake8-report.txt
-
-# Application specific
-code-review-analyzer.log
-code-review-analyzer.log.*
