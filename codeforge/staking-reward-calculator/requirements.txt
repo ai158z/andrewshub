@@ -1,12 +1,3 @@
-fastapi
-uvicorn
-pydantic
-requests
-pandas
-numpy
-sqlalchemy
-redis
-rclpy
-react
-axios
+flask
+decimal
 chart.js
