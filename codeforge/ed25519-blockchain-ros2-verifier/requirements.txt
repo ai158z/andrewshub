@@ -1,0 +1,6 @@
+cryptography>=3.4.7
+ros2
+base58
+requests
+pycryptodome
+ecdsa
