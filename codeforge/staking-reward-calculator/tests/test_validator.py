@@ -1,86 +1,78 @@
 import pytest
-import argparse
-from src.validator import validate_principal, validate_apr, convert_input
+from src.validator import validate_stake_amount
 
-def test_validate_principal_positive_float():
-    result = validate_principal(1000.0)
-    assert result == 1000.0
+class TestValidateStakeAmount:
+    def test_valid_positive_amount(self):
+        assert validate_stake_amount(1000.0) == True
 
-def test_validate_principal_positive_int():
-    result = validate_principal(1000)
-    assert result == 1000.0
+    def test_zero_amount_fails(self):
+        assert validate_stake_amount(0) == False
 
-def test_validate_principal_positive_string():
-    result = validate_principal("1000")
-    assert result == 1000.0
+    def test_negative_amount_fails(self):
+        assert validate_stake_amount(-100) == False
 
-def test_validate_principal_zero():
-    with pytest.raises(argparse.ArgumentTypeError, match="Principal amount must be positive"):
-        validate_principal(0)
+    def test_amount_exceeding_max_fails(self):
+        assert validate_stake_amount(1000001) == False
 
-def test_validate_principal_negative():
-    with pytest.raises(argparse.ArgumentTypeError, match="Principal amount must be positive"):
-        validate_principal(-100)
+    def test_amount_at_max_succeeds(self):
+        assert validate_stake_amount(1000000) == True
 
-def test_validate_principal_invalid_string():
-    with pytest.raises(argparse.ArgumentTypeError, match="Invalid principal amount"):
-        validate_principal("invalid")
+    def test_amount_just_below_max_succeeds(self):
+        assert validate_stake_amount(999999) == True
 
-def test_validate_apr_valid():
-    result = validate_apr(0.05)
-    assert result == 0.05
+    def test_string_amount_fails(self):
+        assert validate_stake_amount("1000") == False
 
-def test_validate_apr_string():
-    result = validate_apr("0.075")
-    assert result == 0.075
+    def test_string_amount_logs_error(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount("invalid")
+        assert "Stake amount must be a number" in caplog.messages
+        assert result == False
 
-def test_validate_apr_negative():
-    with pytest.raises(argparse.ArgumentTypeError, match="APR rate must be between 0 and 1"):
-        validate_apr(-0.1)
+    def test_none_amount_fails(self):
+        assert validate_stake_amount(None) == False
 
-def test_validate_apr_over_100_percent():
-    with pytest.raises(argparse.ArgumentTypeError, match="APR rate must be between 0 and 1"):
-        validate_apr(1.5)
+    def test_boolean_amount_fails(self):
+        assert validate_stake_amount(True) == False
 
-def test_validate_apr_invalid_string():
-    with pytest.raises(argparse.ArgumentTypeError, match="Invalid APR rate"):
-        validate_apr("invalid")
+    def test_float_amount_succeeds(self):
+        assert validate_stake_amount(1500.5) == True
 
-def test_convert_input_int():
-    result = convert_input("123")
-    assert result == 123
-    assert isinstance(result, int)
+    def test_integer_amount_succeeds(self):
+        assert validate_stake_amount(50000) == True
 
-def test_convert_input_float():
-    result = convert_input("123.45")
-    assert result == 123.45
-    assert isinstance(result, float)
+    def test_exact_zero_logs_error(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount(0)
+        assert "Stake amount must be positive" in caplog.messages
+        assert result == False
 
-def test_convert_input_string():
-    result = convert_input("hello")
-    assert result == "hello"
-    assert isinstance(result, str)
+    def test_negative_logs_error(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount(-10)
+        assert "Stake amount must be positive" in caplog.messages
+        assert result == False
 
-def test_convert_input_invalid_int():
-    result = convert_input("abc")
-    assert result == "abc"
+    def test_exceeding_max_logs_error(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount(1000001)
+        assert "Stake amount exceeds maximum allowed value" in caplog.messages
+        assert result == False
 
-def test_convert_input_mixed():
-    result = convert_input("123.0")
-    assert result == 123.0
-    assert isinstance(result, float)
+    def test_valid_amount_no_log_output(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount(5000)
+        assert len(caplog.messages) == 0
+        assert result == True
 
-def test_convert_input_zero():
-    result = convert_input("0")
-    assert result == 0
-    assert isinstance(result, int)
+    def test_valid_float_no_log_output(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount(1500.5)
+        assert len(caplog.messages) == 0
+        assert result == True
 
-def test_convert_input_negative():
-    result = convert_input("-123.45")
-    assert result == -123.45
-    assert isinstance(result, float)
-
-def test_convert_input_scientific():
-    result = convert_input("1e5")
-    assert result == 100000.0
-    assert isinstance(result, float)
+    def test_valid_integer_no_log_output(self, caplog):
+        with caplog.at_level("ERROR"):
+            result = validate_stake_amount(50000)
+        assert len(caplog.messages) == 0
+        assert result == True
