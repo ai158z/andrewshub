@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+rclpy
+react
+react-dom
+axios
+chart.js
