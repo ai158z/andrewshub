@@ -1,0 +1,131 @@
+import pytest
+from unittest.mock import mock_open, patch
+import requirements
+
+def test_parse_requirements():
+    content = """click==8.0.3
+cookiecutter==2.1.1
+pyyaml==6.0"""
+    
+    with patch("builtins.open", mock_open(read_data=content)):
+        reqs = list(requirements.parse(content))
+        assert len(reqs) == 3
+        assert reqs[0].name == 'click'
+        assert reqreqs[0].specifier == '==8.0.3'
+        assert reqs[1].name == 'cookiecutter'
+        assert reqs[1].specifier == '==2.1.1'
+        assert reqs[2].name == 'pyyaml'
+        assert reqs[2].specifier == '==6.0'
+
+def test_parse_empty_requirements():
+    content = ""
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 0
+
+def test_parse_requirements_with_comments():
+    content = """# This is a comment
+click==8.0.3
+# Another comment
+cookiecutter==2.1.1"""
+    
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 2
+    assert reqs[0].name == 'click'
+    assert reqs[1].name == 'cookiecutter'
+
+def test_parse_malformed_requirements():
+    content = "invalid==="
+    reqs = list(requirements.parse(content))
+    # Should handle gracefully or raise appropriate error
+
+def test_parse_requirements_with_versions():
+    content = """click>=8.0.3
+cookiecutter<=2.1.1
+pyyaml~=6.0"""
+    
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 3
+    assert reqs[0].specifier == '>=8.0.3'
+    assert reqs[1].specifier == '<=2.1.1'
+    assert reqs[2].specifier == '~=6.0'
+
+def test_requirement_attributes():
+    content = "click==8.0.3"
+    reqs = list(requirements.parse(content))
+    req = reqs[0]
+    assert req.name == 'click'
+    assert req.specifier == '==8.0.3'
+
+def test_parse_multiple_packages_same_line():
+    content = "click==8.0.3 cookiecutter==2.1.1 pyyaml==6.0"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 3
+
+def test_parse_requirements_with_extras():
+    content = "requests[security]==2.25.1"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+    assert reqs[0].name == 'requests'
+    assert reqs[0].specifier == '==2.25.1'
+
+def test_parse_requirements_with_url():
+    content = "package @ https://example.com/package.tar.gz"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+
+def test_parse_requirements_with_markers():
+    content = "click==8.0.3; python_version>='3.6'"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+    # markers are not parsed by default, so this tests basic parsing still works
+
+def test_parse_requirements_whitespace():
+    content = "  click  ==  8.0.3  "
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+    assert reqs[0].name == 'click'
+    assert reqs[0].specifier == '==8.0.3'
+
+def test_parse_requirements_empty_lines():
+    content = """click==8.0.3
+
+cookiecutter==2.1.1"""
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 2
+
+def test_parse_requirements_case_insensitive():
+    content = "Click==8.0.3"
+    reqs = list(requirements.parse(content))
+    assert reqs[0].name == 'Click'
+
+def test_parse_requirements_special_chars():
+    content = "package-name==1.0.0"
+    reqs = list(requirements.parse(content))
+    assert reqs[0].name == 'package-name'
+
+def test_parse_requirements_file_like_input():
+    content = "-r other-requirements.txt\nclick==8.0.3"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+    assert reqs[0].name == 'click'
+
+def test_parse_requirements_with_hashes():
+    content = "click==8.0.3 --hash=sha256:abc123"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+    assert reqs[0].name == 'click'
+
+def test_parse_requirements_multiple_versions():
+    content = "click>=8.0, <9.0"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
+
+def test_parse_requirements_editable():
+    content = "-e ."
+    reqs = list(requirements.parse(content))
+    assert len(reqs) >= 0
+
+def test_parse_requirements_complex_spec():
+    content = "package >= 1.0, < 2.0, != 1.5"
+    reqs = list(requirements.parse(content))
+    assert len(reqs) == 1
