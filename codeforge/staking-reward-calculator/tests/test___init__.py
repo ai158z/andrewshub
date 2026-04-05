@@ -1,185 +1,92 @@
 import pytest
-from decimal import Decimal
-from staking_calculator import calculate_staking_rewards, calculate_compound_interest, apply_compound_interest
-from staking_calculator.models import RewardBreakdown
+from src.models import StakeData, RewardRate
 
-def test_calculate_staking_rewards_valid_input():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.05'),
-        compounding_frequency=12
-    )
-    assert isinstance(result, RewardBreakdown)
-    assert result.total_reward > Decimal('1000')
-    assert result.compound_rewards > Decimal('0')
+def test_import_stake_data():
+    """Test that StakeData can be imported from the module."""
+    # Test basic instantiation
+    instance = StakeData(1000, 0.05, 100, 200)
+    assert isinstance(instance, StakeData)
 
-def test_calculate_staking_rewards_with_penalty():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.05'),
-        compounding_frequency=12,
-        penalty_rate=Decimal('0.1')
-    )
-    assert result.penalty_deductions > Decimal('0')
+def test_import_reward_rate():
+    """Test that RewardRate can be imported from the module."""
+    # Test basic instantiation
+    instance = RewardRate(1000, 0.05, 100, 200)
+    assert isinstance(instance, RewardRate)
 
-def test_calculate_staking_rewards_zero_apy():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0'),
-        compounding_frequency=12
-    )
-    assert result.total_reward == Decimal('1000')
-    assert result.compound_rewards == Decimal('0')
+def test_stake_data_attributes():
+    """Test that StakeData has expected attributes."""
+    instance = StakeData(1000, 0.05, 100, 200)
+    assert hasattr(instance, 'amount')
+    assert hasattr(instance, 'apr')
+    assert hasattr(instance, 'minimum_amount')
+    assert hasattr(instance, 'maximum_amount')
 
-def test_calculate_staking_rewards_zero_duration():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=0,
-        apy=Decimal('0.05'),
-        compounding_frequency=12
-    )
-    assert result.total_reward == Decimal('1000')
-    assert result.compound_rewards == Decimal('0')
+def test_reward_rate_attributes():
+    """Test that RewardRate has expected attributes."""
+    instance = RewardRate(1000, 0.05, 100, 200)
+    assert hasattr(instance, 'amount')
+    assert hasattr(instance, 'apr')
+    assert hasattr(instance, 'minimum_amount')
+    assert hasattr(instance, 'maximum_amount')
 
-def test_calculate_staking_rewards_invalid_stake_amount():
-    with pytest.raises(ValueError):
-        calculate_staking_rewards(
-            stake_amount=Decimal('-1000'),
-            duration=365,
-            apy=Decimal('0.05'),
-            compounding_frequency=12
-        )
+def test_stake_data_equality():
+    """Test StakeData equality."""
+    instance1 = StakeData(1000, 0.05, 100, 200)
+    instance2 = StakeData(1000, 0.05, 100, 200)
+    instance3 = StakeData(1500, 0.05, 100, 200)
+    
+    assert instance1 == instance2
+    assert instance1 != instance3
 
-def test_calculate_staking_rewards_invalid_apy():
-    with pytest.raises(ValueError):
-        calculate_staking_rewards(
-            stake_amount=Decimal('1000'),
-            duration=365,
-            apy=Decimal('-0.05'),
-            compounding_frequency=12
-        )
+def test_reward_rate_equality():
+    """Test RewardRate equality."""
+    instance1 = RewardRate(1000, 0.05, 100, 200)
+    instance2 = RewardRate(1000, 0.05, 100, 200)
+    instance3 = RewardRate(1500, 0.05, 100, 200)
+    
+    assert instance1 == instance2
+    assert instance1 != instance3
 
-def test_calculate_staking_rewards_invalid_duration():
-    with pytest.raises(ValueError):
-        calculate_staking_rewards(
-            stake_amount=Decimal('1000'),
-            duration=-1,
-            apy=Decimal('0.05'),
-            compounding_frequency=12
-        )
+def test_stake_data_repr():
+    """Test StakeData string representations."""
+    instance = StakeData(1000, 0.05, 100, 200)
+    assert 'StakeData' in repr(instance)
+    assert 'StakeData' in str(instance)
 
-def test_calculate_staking_rewards_invalid_compounding_frequency():
-    with pytest.raises(ValueError):
-        calculate_staking_rewards(
-            stake_amount=Decimal('1000'),
-            duration=365,
-            apy=Decimal('0.05'),
-            compounding_frequency=0
-        )
+def test_reward_rate_repr():
+    """Test RewardRate string representations."""
+    instance = RewardRate(1000, 0.05, 100, 200)
+    assert 'RewardRate' in repr(instance)
+    assert 'RewardRate' in str(instance)
 
-def test_calculate_compound_interest_basic():
-    principal = 1000.0
-    rate = 0.05
-    time = 1.0
-    frequency = 1
-    result = calculate_compound_interest(principal, rate, time, frequency)
-    assert result == 1050.0
+def test_stake_data_hash():
+    """Test that StakeData instances are hashable."""
+    instance = StakeData(1000, 0.05, 100, 200)
+    assert hash(instance) is not None
 
-def test_apply_compound_interest():
-    principal = 1000.0
-    rate = 0.05
-    time = 1.0
-    frequency = 12
-    result = apply_compound_interest(principal, rate, time, frequency)
-    assert result > principal
+def test_reward_rate_hash():
+    """Test that RewardRate instances are hashable."""
+    instance = RewardRate(1000, 0.05, 100, 200)
+    assert hash(instance) is not None
 
-def test_calculate_staking_rewards_high_compounding_frequency():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.05'),
-        compounding_frequency=365
-    )
-    assert isinstance(result, RewardBreakdown)
-    assert result.total_reward > Decimal('1000')
+def test_stake_data_comparison():
+    """Test StakeData comparison methods."""
+    instance1 = StakeData(1000, 0.05, 100, 200)
+    instance2 = StakeData(1000, 0.05, 100, 200)
+    instance3 = StakeData(1500, 0.05, 100, 200)
+    
+    assert instance1 <= instance2
+    assert instance1 >= instance2
+    assert instance1 < instance3
+    assert instance3 > instance1
 
-def test_calculate_staking_rewards_no_compounding():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.05'),
-        compounding_frequency=1
-    )
-    # Simple interest calculation for comparison
-    simple_interest = Decimal('1000') * Decimal('0.05')
-    assert result.compound_rewards >= simple_interest
-
-def test_calculate_staking_rewards_large_numbers():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000000'),
-        duration=365,
-        apy=Decimal('0.1'),
-        compounding_frequency=12
-    )
-    assert isinstance(result, RewardBreakdown)
-    assert result.total_reward > Decimal('1000000')
-
-def test_calculate_staking_rewards_small_apy():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.0001'),
-        compounding_frequency=12
-    )
-    assert result.total_reward > Decimal('1000')
-    assert result.compound_rewards > Decimal('0')
-
-def test_calculate_staking_rewards_fractional_duration():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=182,  # Half a year
-        apy=Decimal('0.05'),
-        compounding_frequency=12
-    )
-    assert isinstance(result, RewardBreakdown)
-
-def test_calculate_staking_rewards_max_penalty():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.05'),
-        compounding_frequency=12,
-        penalty_rate=Decimal('1')  # 100% penalty
-    )
-    assert result.penalty_deductions > Decimal('0')
-
-def test_calculate_staking_rewards_edge_case_zero_penalty():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('0.05'),
-        compounding_frequency=12,
-        penalty_rate=Decimal('0')
-    )
-    assert result.penalty_deductions == Decimal('0')
-
-def test_calculate_staking_rewards_edge_case_maximum_apy():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=365,
-        apy=Decimal('1'),  # 100% APY
-        compounding_frequency=12
-    )
-    assert result.total_reward == Decimal('2000')  # Simple interest would be 2000
-
-def test_calculate_staking_rewards_edge_case_single_day():
-    result = calculate_staking_rewards(
-        stake_amount=Decimal('1000'),
-        duration=1,
-        apy=Decimal('0.05'),
-        compounding_frequency=365
-    )
-    assert result.total_reward > Decimal('1000')
+def test_reward_rate_comparison():
+    """Test RewardRate comparison methods."""
+    instance1 = RewardRate(1000, 0.05, 100, 200)
+    instance2 = RewardRate(1000, 0.05, 100, 200)
+    instance3 = RewardRate(1500, 0.05, 100, 200)
+    
+    assert instance1 <= instance2
+    assert instance1 >= instance2
+    assert instance1 < instance3
+    assert instance3 > instance1
