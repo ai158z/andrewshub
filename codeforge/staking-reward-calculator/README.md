@@ -1,166 +1,166 @@
 # Staking Reward Calculator
 
-A Python library for calculating staking rewards with APY, compound interest, and lockup penalties. This tool provides precise financial calculations for cryptocurrency staking scenarios with detailed reward estimates.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A command-line tool for calculating staking rewards with comprehensive analysis and visualization capabilities.
 
 ## Features
 
-- **APY Calculation**: Accurate Annual Percentage Yield calculations with configurable compounding frequencies
-- **Compound Interest**: Support for various compounding periods (daily, weekly, monthly, annually)
-- **Lockup Penalties**: Calculate penalties for early unstaking with configurable penalty structures
-- **High Precision**: Uses Python's `decimal` module for financial-grade precision
-- **Input Validation**: Comprehensive validation for all staking parameters
-- **Detailed Results**: Breakdown of rewards, penalties, and effective returns
+- **Stake Calculation**: Calculate estimated staking rewards based on current network parameters
+- **Reward Visualization**: Generate time-series visualizations of reward growth
+- **Risk Analysis**: Include risk factors affecting potential rewards (network changes, validator performance)
+- **Currency Conversion**: Automatic USD equivalent calculation using current market prices
+- **Multiple Networks**: Support for various blockchain networks
+- **Comprehensive Reporting**: Detailed output with risk assessments and projections
 
 ## Prerequisites
 
-- Python 3.7+
+- Python 3.8+
 - pip (Python package installer)
 
 ## Installation
 
-### From PyPI
-```bash
-pip install staking-reward-calculator
-```
-
 ### From Source
+
 ```bash
-git clone https://github.com/your-username/staking-reward-calculator.git
+# Clone the repository
+git clone https://github.com/yourusername/staking-reward-calculator.git
 cd staking-reward-calculator
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### Development Installation
+### Using pip
+
 ```bash
-pip install -e .
+pip install staking-reward-calculator
 ```
-
-## Usage Examples
-
-### Basic Usage
-```python
-from staking_calculator import calculate_staking_rewards
-
-# Calculate rewards for 1000 tokens staked for 1 year at 10% APY
-result = calculate_staking_rewards(
-    stake_amount=1000.0,
-    duration_days=365,
-    annual_percentage_yield=10.0,
-    compounding_frequency='daily'
-)
-
-print(f"Total Rewards: {result.total_rewards}")
-print(f"Final Amount: {result.final_amount}")
-```
-
-### With Early Unstaking Penalty
-```python
-from staking_calculator import calculate_staking_with_penalty
-
-# Calculate with 25% penalty for early withdrawal after 90 days
-result = calculate_staking_with_penalty(
-    stake_amount=5000.0,
-    duration_days=90,
-    annual_percentage_yield=8.5,
-    penalty_rate=0.25,
-    penalty_applies_before_days=180
-)
-
-print(f"Rewards After Penalty: {result.rewards_after_penalty}")
-print(f"Penalty Amount: {result.penalty_amount}")
-```
-
-## API Documentation
-
-### Main Functions
-
-#### `calculate_staking_rewards()`
-Calculate staking rewards with compound interest
-
-**Parameters:**
-- `stake_amount` (float): Initial amount staked
-- `duration_days` (int): Staking duration in days
-- `annual_percentage_yield` (float): Annual yield percentage
-- `compounding_frequency` (str): Compounding period ('daily', 'weekly', 'monthly', 'annually')
-- `decimal_precision` (int, optional): Decimal precision for calculations
-
-**Returns:**
-`StakingResult` object with:
-- `total_rewards`: Total accumulated rewards
-- `final_amount`: Final stake value
-- `effective_apr`: Effective annual percentage rate
-- `compounding_details`: Breakdown of compounding calculations
-
-#### `calculate_staking_with_penalty()`
-Calculate staking rewards including early withdrawal penalties
-
-**Parameters:**
-- `stake_amount` (float): Initial amount staked
-- `duration_days` (int): Actual staking duration
-- `annual_percentage_yield` (float): Annual yield percentage
-- `penalty_rate` (float): Penalty rate as decimal (0.25 = 25%)
-- `penalty_applies_before_days` (int): Days before which penalty applies
-- `compounding_frequency` (str): Compounding period
-
-**Returns:**
-`PenaltyResult` object with additional penalty information
 
 ## Project Structure
 
 ```
 staking-reward-calculator/
-├── staking_calculator/
-│   ├── __init__.py
-│   ├── core.py          # Core calculation engine
-│   ├── models.py         # Data models
-│   ├── calculator.py     # Main calculator logic
-│   ├── validators.py      # Input validation
-│   └── utils.py        # Utility functions
+├── src/
+│   ├── cli.py              # CLI entry point
+│   ├── calculator.py        # Core calculation logic
+│   ├── visualizer.py       # Reward visualization
+│   ├── risk_analyzer.py    # Risk analysis logic
+│   ├── network_data.py     # Network data fetching
+│   └── currency_converter.py # Currency conversion
 ├── tests/
 │   ├── test_calculator.py
-│   ├── test_compounding.py
-│   └── test_penalties.py
+│   ├── test_visualizer.py
+│   ├── test_risk_analyzer.py
+│   ├── test_network_data.py
+│   └── test_currency_converter.py
 ├── requirements.txt
-├── setup.py
-└── README.md
+└── setup.py
+```
+
+## Usage
+
+### Basic Usage
+
+```bash
+# Calculate staking rewards
+python -m src.cli --stake 1000 --duration 365 --network ethereum
+
+# With risk analysis
+python -m src.cli --stake 5000 --duration 180 --network cosmos --include-risk
+```
+
+### Command Line Options
+
+```bash
+python -m src.cli [OPTIONS]
+
+Options:
+  --stake FLOAT                   Amount to stake
+  --duration INTEGER                Staking duration in days
+  --network TEXT                  Blockchain network (ethereum, cosmos, etc.)
+  --include-risk                  Include risk analysis in calculation
+  --currency TEXT                  Output currency (USD, EUR, etc.)
+  --help                         Show this message and exit
+```
+
+## API Documentation
+
+### Core Modules
+
+#### `calculator.py`
+```python
+def calculate_rewards(stake_amount: float, duration: int, network: str) -> dict:
+    """
+    Calculate staking rewards based on network parameters
+    
+    Args:
+        stake_amount: Amount to stake
+        duration: Staking period in days
+        network: Target blockchain network
+        
+    Returns:
+        dict: Reward calculation results
+    """
+```
+
+#### `network_data.py`
+```python
+def fetch_network_parameters(network: str) -> dict:
+    """
+    Fetch current network parameters from external APIs
+    
+    Args:
+        network: Blockchain network identifier
+        
+    Returns:
+        dict: Current network parameters
+    """
 ```
 
 ## Testing
 
-Run all tests:
 ```bash
+# Run all tests
 python -m pytest tests/
-```
 
-Run specific test modules:
-```bash
+# Run specific test modules
 python -m pytest tests/test_calculator.py
-python -m pytest tests/test_compounding.py
-python -m pytest tests/test_penalties.py
+python -m pytest tests/test_visualizer.py
 ```
-
-Run tests with coverage:
-```bash
-python -m pytest --cov=staking_calculator tests/
-```
-
-## Environment Variables
-
-This library does not require environment variables for basic operation. All configuration is passed through function parameters.
 
 ## Deployment
 
-This is a library package. For deployment in applications:
+### Docker Deployment (Optional)
 
-1. Install via pip: `pip install staking-reward-calculator`
-2. Import in your Python code: `from staking_calculator import calculate_staking_rewards`
-3. Use the calculation functions in your application logic
+If using Docker for containerized deployment:
+
+```dockerfile
+FROM python:3.9-slim
+
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+
+CMD ["python", "-m", "src.cli"]
+```
+
+### Environment Variables
+
+No specific environment variables required. All configuration is handled via command-line arguments.
 
 ## License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+```
 MIT License
 
-Copyright (c) 2023 Your Name
+Copyright (c) 2024 staking-reward-calculator
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -179,3 +179,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
