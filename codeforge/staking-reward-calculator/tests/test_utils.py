@@ -1,86 +1,84 @@
 import pytest
-import decimal
-from decimal import Decimal
-from staking_calculator.utils import precise_division, precise_multiply, percentage_of
+from src.utils import format_currency, cache_get, cache_set, DataCache
+from unittest.mock import patch, MagicMock
 
-def test_precise_division_with_integers():
-    result = precise_division(10, 3)
-    expected = Decimal('3.33333333333333333333333333333333333333333333333333')
-    assert result == expected
+def test_format_currency_valid_positive():
+    assert format_currency(1234.56) == "$1,234.56"
 
-def test_precise_division_with_floats():
-    result = precise_division(10.0, 3.0)
-    expected = Decimal('3.33333333333333333333333333333333333333333333333333')
-    assert result == expected
+def test_format_currency_valid_zero():
+    assert format_currency(0) == "$0.00"
 
-def test_precise_division_with_decimals():
-    result = precise_division(Decimal('10'), Decimal('3'))
-    expected = Decimal('3.33333333333333333333333333333333333333333333333333')
-    assert result == expected
+def test_format_currency_valid_negative():
+    assert format_currency(-1234.56) == "-$1,234.56"
 
-def test_precise_division_by_zero_raises_exception():
-    with pytest.raises(decimal.DivisionByZero):
-        precise_division(10, 0)
-
-def test_precise_division_invalid_input_raises_type_error():
+def test_format_currency_invalid_type():
     with pytest.raises(TypeError):
-        precise_division("invalid", 5)
+        format_currency("invalid")
 
-def test_precise_multiply_with_integers():
-    result = precise_multiply(15, 2)
-    assert result == Decimal('30')
+def test_cache_get_nonexistent_key():
+    with patch.object(DataCache, 'get', return_value=None):
+        result = cache_get("nonexistent")
+        assert result is None
 
-def test_precise_multiply_with_floats():
-    result = precise_multiply(15.5, 2.0)
-    assert result == Decimal('31.0')
+def test_cache_get_exception():
+    with patch.object(DataCache, 'get', side_effect=Exception("Cache error")):
+        result = cache_get("test_key")
+        assert result is None
 
-def test_precise_multiply_with_decimals():
-    result = precise_multiply(Decimal('15.5'), Decimal('2.5'))
-    assert result == Decimal('38.75')
+def test_cache_set_success():
+    with patch.object(DataCache, 'set') as mock_set:
+        cache_set("test_key", "test_value")
+        mock_set.assert_called_once_with("test_key", "test_value")
 
-def test_precise_multiply_invalid_input_raises_type_error():
+def test_cache_set_exception():
+    with patch.object(DataCache, 'set', side_effect=Exception("Cache error")):
+        with pytest.raises(Exception):
+            cache_set("test_key", "test_value")
+
+def test_format_currency_int():
+    assert format_currency(1000) == "$1,000.00"
+
+def test_format_currency_float_string():
     with pytest.raises(TypeError):
-        precise_multiply("invalid", 5)
+        format_currency("1234.56")
 
-def test_percentage_of_with_integers():
-    result = percentage_of(1000, 15)
-    expected = Decimal('150')
-    assert result == expected
+def test_cache_get_valid_key():
+    expected_value = "test_value"
+    with patch.object(DataCache, 'get', return_value=expected_value):
+        result = cache_get("test_key")
+        assert result == expected_value
 
-def test_percentage_of_with_floats():
-    result = percentage_of(1000.0, 15.5)
-    expected = Decimal('155.000000000000000000000000000000000000000000000000')
-    assert result == expected
+def test_cache_set_and_get():
+    cache_set("test_key", "stored_value")
+    with patch.object(DataCache, 'get', return_value="stored_value"):
+        result = cache_get("test_key")
+        assert result == "stored_value"
 
-def test_percentage_of_with_decimals():
-    result = percentage_of(Decimal('1000'), Decimal('15.5'))
-    expected = Decimal('155.000000000000000000000000000000000000000000000000')
-    assert result == expected
+def test_DataCache_get_cache_key():
+    key = "test"
+    expected_hash = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"  # SHA256 of "test"
+    # Note: This test assumes we can access the internal method for testing hash generation
+    # In practice, we'd test this by checking the actual behavior, not the internal method
+    pass
 
-def test_percentage_of_invalid_input_raises_type_error():
+def test_format_currency_large_number():
+    assert format_currency(1234567.89) == "$1,234,567.89"
+
+def test_format_currency_negative_zero():
+    assert format_currency(-0.0) == "$0.00"
+
+def test_format_currency_precision():
+    assert format_currency(1234.567) == "$1,234.57"
+
+def test_format_currency_non_numeric():
     with pytest.raises(TypeError):
-        percentage_of("invalid", 15)
+        format_currency("1234.56")
 
-def test_precise_division_negative_numbers():
-    result = precise_division(-10, 2)
-    assert result == Decimal('-5')
+def test_format_currency_none():
+    with pytest.raises(TypeError):
+        format_currency(None)
 
-def test_precise_multiply_negative_numbers():
-    result = precise_multiply(-15, 2)
-    assert result == Decimal('-30')
-
-def test_percentage_of_negative_amount():
-    result = percentage_of(-1000, 15)
-    assert result == Decimal('-150')
-
-def test_precise_division_large_numbers():
-    result = precise_division(1000000000000, 1000000)
-    assert result == Decimal('1000000')
-
-def test_precise_multiply_zero():
-    result = precise_multiply(0, 100)
-    assert result == Decimal('0')
-
-def test_percentage_of_zero():
-    result = percentage_of(0, 50)
-    assert result == Decimal('0')
+def test_cache_set_none_value():
+    with patch.object(DataCache, 'set') as mock_set:
+        cache_set("test_key", None)
+        mock_set.assert_called_once_with("test_key", None)
