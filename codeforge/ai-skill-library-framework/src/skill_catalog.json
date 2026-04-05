@@ -1,0 +1,68 @@
+{
+  "skill_framework": {
+    "version": "1.0",
+    "schema": "skill_catalog",
+    "metadata": {
+      "description": "AI Skill Library Framework Configuration",
+      "author": "AI Skill Framework Team",
+      "license": "MIT"
+    }
+  },
+  "skills": [
+    {
+      "id": "navigation",
+      "name": "Navigation Skill",
+      "description": "Enables autonomous navigation in physical or virtual environments",
+      "enabled": true,
+      "category": "ai_skill",
+      "version": "1.0.0",
+      "parameters": {
+        "max_distance": 10.0,
+        "obstacle_sensitivity": 0.8,
+        "max_speed": 2.5
+      }
+    },
+    {
+      "id": "navigation",
+      "name": "Navigation Skill",
+      "description": "Enables navigation capabilities in physical or simulated environments",
+      "type": "skill",
+      "execution_model": "differential_drive",
+     
+      "version": "1.0.0",
+      "package": "ros_navigation",
+      "action_space": {
+        "type": "object",
+        "properties": {
+          "linear_velocity": {
+            "type": "number",
+            "default": 0.0
+          },
+          "angular_velocity": {
+            "type": "number",
+            "default": 0.0
+          }
+        }
+      },
+      "observation_space": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "z": {
+                "type": "number"
+              }
+            },
+            "required": ["x", "y", "z"]
+          }
+        }
+      }
+    ]
+}
