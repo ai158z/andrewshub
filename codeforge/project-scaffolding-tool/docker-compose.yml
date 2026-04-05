@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: project-scaffolding-tool:latest
+    container_name: project-scaffolding-tool
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./output:/app/output
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    command: ["--help"]
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: project-scaffolding-tool:latest
+    container_name: project-scaffolding-tool-test
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./tests:/app/tests
+      - ./output:/app/output
+    working_dir: /app
+    command: ["python", "-m", "pytest", "tests/"]
