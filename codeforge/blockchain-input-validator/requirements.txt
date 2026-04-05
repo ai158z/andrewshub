@@ -1,0 +1,7 @@
+pycryptodome
+eth-utils
+base58
+bech32
+rclpy
+web3
+bitcoinlib
