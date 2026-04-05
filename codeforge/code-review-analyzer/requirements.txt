@@ -1,0 +1,7 @@
+click
+pygithub
+pylint
+bandit
+flake8
+requests
+pydantic
