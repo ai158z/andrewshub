@@ -1,43 +1,39 @@
-import click
-import os
-from unittest.mock import patch, mock_open
-import tempfile
+import sys
+from typing import Callable
+import typer
+from typer import Typer
 
-# Create a mock scaffolder function since we can't import the real one
-def scaffold_project(template, name, output):
-    # Mock implementation - in a real scenario this would create actual files
-    pass
+# Handle the case where typer might not be available
+try:
+    import typer
+    from typer import Typer
+    typer_available = True
+except ImportError:
+    # If typer is not available, we can't use it
+    typer_available = False
 
-@click.command()
-@click.option('--language', '-l', type=click.Choice(['python', 'javascript', 'rust']), required=True, help='Programming language for the project')
-@click.option('--name', '-n', required=True, help='Name of the project')
-@click.option('--output', '-o', default='.', type=click.Path(exists=True, file_okay=False, writable=True), help='Output directory for the project')
-def main(language, name, output):
-    """Create a new project with the specified language and name."""
-    # Validate project name
-    if not name or not name[0].isalpha():
-        raise click.BadParameter(f"Invalid project name: {name}")
-    
-    # In a real implementation, we would use the templates here
-    # For now, we're just validating the inputs
-    template_map = {
-        'python': 'python_template',
-        'javascript': 'javascript_template',
-        'rust': 'rust_template'
-    }
-    
-    # This is just to use the variable to avoid unused variable warning
-    _ = template_map.get(language, None)
-    
-    try:
-        # In a real implementation, we would call the scaffolder here
-        # scaffold_project(template, name, output)
-        click.echo(f"Project '{name}' created successfully in {output}")
-    except Exception as e:
-        raise click.ClickException(f"Failed to create project: {str(e)}")
+def create_app() -> Typer:
+    """Create and return the typer application instance"""
+    if not typer_available:
+        raise Exception("Typer not available")
+    app = typer.Typer()
+    # Add commands to the app
+    app.command()(lambda: None)  # Add a dummy command
+    return app
 
-if __name__ == '__main__':
-    # Mock the click execution for testing
-    with patch('os.path.exists', return_value=True):
-        with patch('os.access', return_value=True):
-            main()
+def main() -> None:
+    """Main entry point - creates and runs the typer app"""
+    if typer_available:
+        app = typer.Typer()
+        app()
+    else:
+        # If typer is not available, create a basic typer-like object
+        class MockTyper:
+            def __call__(self):
+                return typer.Typer()
+
+        app = typer.Typer()
+        app()
+
+if __name__ == "__main__":
+    main()
