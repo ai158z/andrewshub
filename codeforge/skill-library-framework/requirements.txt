@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+torch
+transformers
+psycopg2-binary
+redis
+numpy
+pandas
+scikit-learn
+faiss-cpu
