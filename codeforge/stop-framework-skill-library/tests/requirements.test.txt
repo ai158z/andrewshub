@@ -1,0 +1,134 @@
+import pytest
+from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
+
+def test_pydantic_version_specified():
+    req = Requirement("pydantic>=2.0.0")
+    assert req.name == "pydantic"
+    assert req.specifier.contains("2.0.0")
+    assert not req.specifier.contains("1.9.0")
+
+def test_sqlalchemy_version_specified():
+    req = Requirement("sqlalchemy>=2.0.0")
+    assert req.name == "sqlalchemy"
+    assert req.specifier.contains("2.0.0")
+    assert req.specifier.contains("2.1.0")
+
+def test_alembic_version_specified():
+    req = Requirement("alembic>=1.10.0")
+    assert req.name == "alembic"
+    assert req.specifier.contains("1.10.0")
+    assert req.specifier.contains("1.11.0")
+
+def test_cryptography_version_specified():
+    req = Requirement("cryptography>=3.0.0")
+    assert req.name == "cryptography"
+    assert req.specifier.contains("3.0.0")
+    assert req.specifier.contains("3.1.0")
+
+def test_pyyaml_version_specified():
+    req = Requirement("pyyaml>=6.0")
+    assert req.name == "pyyaml"
+    assert req.specifier.contains("6.0")
+    assert not req.specifier.contains("5.9")
+
+def test_jsonschema_version_specified():
+    req = Requirement("jsonschema>=4.0.0")
+    assert req.name == "jsonschema"
+    assert req.specifier.contains("4.0.0")
+    assert req.specifier.contains("4.1.0")
+
+def test_pydantic_minimum_version():
+    req = Requirement("pydantic>=2.0.0")
+    assert req.specifier.contains("2.0.0")
+    assert not req.specifier.contains("1.99.0")
+
+def test_sqlalchemy_minimum_version():
+    req = Requirement("sqlalchemy>=2.0.0")
+    assert req.specifier.contains("2.0.0")
+    assert not req.specifier.contains("1.9.9")
+
+def test_alembic_minimum_version():
+    req = Requirement("alembic>=1.10.0")
+    assert req.specifier.contains("1.10.0")
+    assert not req.specifier.contains("1.9.9")
+
+def test_cryptography_minimum_version():
+    req = Requirement("cryptography>=3.0.0")
+    assert req.specifier.contains("3.0.0")
+    assert not req.specifier.contains("2.99.0")
+
+def test_pyyaml_minimum_version():
+    req = Requirement("pyyaml>=6.0")
+    assert req.specifier.contains("6.0")
+    assert req.specifier.contains("6.1")
+    assert not req.specifier.contains("5.99")
+
+def test_jsonschema_minimum_version():
+    req = Requirement("jsonschema>=4.0.0")
+    assert req.specifier.contains("4.0.0")
+    assert req.specifier.contains("4.0.1")
+    assert not req.specifier.contains("3.99.0")
+
+def test_pydantic_prerelease_handling():
+    req = Requirement("pydantic>=2.0.0")
+    assert req.specifier.contains("2.0.0a1", prereleases=True)
+    assert req.specifier.contains("2.0.0b2", prereleases=True)
+    assert req.specifier.contains("2.0.0rc1", prereleases=True)
+
+def test_sqlalchemy_prerelease_handling():
+    req = Requirement("sqlalchemy>=2.0.0")
+    assert req.specifier.contains("2.0.0a1", prereleases=True)
+    assert req.specifier.contains("2.0.0b2", prereleases=True)
+
+def test_requirements_parse_without_error():
+    requirements = [
+        "pydantic>=2.0.0",
+        "sqlalchemy>=2.0.0",
+        "alembic>=1.10.0",
+        "cryptography>=3.0.0",
+        "pyyaml>=6.0",
+        "jsonschema>=4.0.0"
+    ]
+    for req_str in requirements:
+        req = Requirement(req_str)
+        assert req.name in req_str.lower()
+
+def test_requirements_have_valid_specifiers():
+    requirements = [
+        "pydantic>=2.0.0",
+        "sqlalchemy>=2.0.0",
+        "alembic>=1.10.0",
+        "cryptography>=3.0.0",
+        "pyyaml>=6.0",
+        "jsonschema>=4.0.0"
+    ]
+    for req_str in requirements:
+        req = Requirement(req_str)
+        assert isinstance(req.specifier, SpecifierSet)
+        assert len(req.specifier) > 0
+
+def test_pydantic_version_accepts_valid_versions():
+    req = Requirement("pydantic>=2.0.0")
+    assert req.specifier.contains("2.0.0")
+    assert req.specifier.contains("2.1.0")
+    assert req.specifier.contains("3.0.0")
+    assert not req.specifier.contains("1.99.0")
+
+def test_cryptography_version_accepts_valid_versions():
+    req = Requirement("cryptography>=3.0.0")
+    assert req.specifier.contains("3.0.0")
+    assert req.specifier.contains("3.1.0")
+    assert not req.specifier.contains("2.99.0")
+
+def test_alembic_version_accepts_valid_versions():
+    req = Requirement("alembic>=1.10.0")
+    assert req.specifier.contains("1.10.0")
+    assert req.specifier.contains("1.11.0")
+    assert not req.specifier.contains("1.9.9")
+
+def test_jsonschema_version_accepts_valid_versions():
+    req = Requirement("jsonschema>=4.0.0")
+    assert req.specifier.contains("4.0.0")
+    assert req.specifier.contains("4.1.0")
+    assert not req.specifier.contains("3.9.9")
