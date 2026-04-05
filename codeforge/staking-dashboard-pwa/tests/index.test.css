@@ -1,0 +1,180 @@
+import { render, screen } from '@testing-library/react';
+import React from 'react';
+import '../src/styles/index.css';
+
+describe('CSS Module Tests', () => {
+  test('defines CSS variables in :root', () => {
+    const root = document.documentElement;
+    const styles = getComputedStyle(root);
+    expect(styles.getPropertyValue('--primary-color').trim()).toBe('#4f46e5');
+  });
+
+  test('applies global font styles to all elements', () => {
+    const div = document.createElement('div');
+    document.body.appendChild(div);
+    const styles = getComputedStyle(div);
+    expect(styles.fontFamily).toContain('Inter');
+  });
+
+  test('sets body background and text color correctly', () => {
+    const body = document.body;
+    expect(body).toHaveStyle({
+      'background-color': '#f9fafb',
+      'color': '#1f2937'
+    });
+  });
+
+  test('creates app container with flex column layout', () => {
+    const container = document.createElement('div');
+    container.className = 'app-container';
+    document.body.appendChild(container);
+    const styles = getComputedStyle(container);
+    expect(styles.display).toBe('flex');
+    expect(styles.flexDirection).toBe('column');
+  });
+
+  test('main content has correct max-width and padding', () => {
+    const main = document.createElement('main');
+    main.className = 'main-content';
+    document.body.appendChild(main);
+    const styles = getComputedStyle(main);
+    expect(styles.maxWidth).toBe('1200px');
+    expect(styles.padding).toBe('1rem');
+  });
+
+  test('dashboard grid uses CSS grid layout', () => {
+    const grid = document.createElement('div');
+    grid.className = 'dashboard-grid';
+    document.body.appendChild(grid);
+    const styles = getComputedStyle(grid);
+    expect(styles.display).toBe('grid');
+  });
+
+  test('card components have correct styling', () => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    document.body.appendChild(card);
+    const styles = getComputedStyle(card);
+    expect(styles.background).toBe('white');
+    expect(styles.borderRadius).toBe('8px');
+  });
+
+  test('form elements have correct base styles', () => {
+    const input = document.createElement('input');
+    input.className = 'form-input';
+    document.body.appendChild(input);
+    const styles = getComputedStyle(input);
+    expect(styles.border).toBe('1px solid #d1d5db');
+    expect(styles.borderRadius).toBe('8px');
+  });
+
+  test('form button has correct interactive states', () => {
+    const button = document.createElement('button');
+    button.className = 'form-button';
+    document.body.appendChild(button);
+    const baseStyles = getComputedStyle(button);
+    expect(baseStyles.backgroundColor).toBe('rgb(79, 70, 229)');
+    
+    button.setAttribute('data-hover', 'true');
+    button.dispatchEvent(new MouseEvent('mouseover'));
+    const hoverStyles = getComputedStyle(button);
+    expect(hoverStyles.backgroundColor).toBe('rgb(129, 140, 248)');
+  });
+
+  test('disabled form button has correct styles', () => {
+    const button = document.createElement('button');
+    button.className = 'form-button';
+    button.disabled = true;
+    document.body.appendChild(button);
+    const styles = getComputedStyle(button);
+    expect(styles.backgroundColor).toBe('rgb(156, 163, 175)');
+    expect(styles.cursor).toBe('not-allowed');
+  });
+
+  test('notification banner has correct initial state', () => {
+    const banner = document.createElement('div');
+    banner.className = 'notification-banner';
+    document.body.appendChild(banner);
+    const styles = getComputedStyle(banner);
+    expect(styles.position).toBe('fixed');
+    expect(styles.transform).toBe('translateY(-100%)');
+  });
+
+  test('notification banner shows when active', () => {
+    const banner = document.createElement('div');
+    banner.className = 'notification-banner show';
+    document.body.appendChild(banner);
+    const styles = getComputedStyle(banner);
+    expect(styles.transform).toBe('translateY(0px)');
+  });
+
+  test('status indicators render with correct colors', () => {
+    const online = document.createElement('div');
+    online.className = 'status-indicator online';
+    document.body.appendChild(online);
+    
+    const offline = document.createElement('div');
+    offline.className = 'status-indicator offline';
+    document.body.appendChild(offline);
+    
+    const onlineStyles = getComputedStyle(online);
+    const offlineStyles = getComputedStyle(offline);
+    
+    expect(onlineStyles.backgroundColor).toBe('rgb(16, 185, 129)');
+    expect(offlineStyles.backgroundColor).toBe('rgb(239, 68, 68)');
+  });
+
+  test('transaction items have correct base styling', () => {
+    const item = document.createElement('div');
+    item.className = 'transaction-item';
+    document.body.appendChild(item);
+    const styles = getComputedStyle(item);
+    expect(styles.display).toBe('flex');
+  });
+
+  test('staking overview uses grid layout', () => {
+    const overview = document.createElement('div');
+    overview.className = 'staking-overview';
+    document.body.appendChild(overview);
+    const styles = getComputedStyle(overview);
+    expect(styles.display).toBe('grid');
+  });
+
+  test('mobile responsive styles apply at correct breakpoint', () => {
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    expect(mediaQuery.matches).toBe(false);
+  });
+
+  test('focus styles apply outline correctly', () => {
+    const button = document.createElement('button');
+    button.focus();
+    const styles = getComputedStyle(button);
+    expect(styles.outline).toBe('2px solid #4f46e5');
+  });
+
+  test('utility classes apply correct text alignment', () => {
+    const center = document.createElement('div');
+    center.className = 'text-center';
+    document.body.appendChild(center);
+    const centerStyles = getComputedStyle(center);
+    expect(centerStyles.textAlign).toBe('center');
+    
+    const right = document.createElement('div');
+    right.className = 'text-right';
+    document.body.appendChild(right);
+    const rightStyles = getComputedStyle(right);
+    expect(rightStyles.textAlign).toBe('right');
+  });
+
+  test('sr-only class visually hides elements', () => {
+    const element = document.createElement('div');
+    element.className = 'sr-only';
+    document.body.appendChild(element);
+    const styles = getComputedStyle(element);
+    expect(styles.position).toBe('absolute');
+    expect(styles.width).toBe('1px');
+    expect(styles.height).toBe('1px');
+    expect(styles.margin).toBe('-1px');
+    expect(styles.overflow).toBe('hidden');
+  });
+});
