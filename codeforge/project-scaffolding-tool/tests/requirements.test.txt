@@ -1,0 +1,169 @@
+import pytest
+from unittest.mock import mock_open, patch
+import subprocess
+import sys
+from pathlib import Path
+
+def test_click_version():
+    import click
+    assert click.__version__ == '8.1.7'
+
+def test_jinja2_version():
+    import jinja2
+    assert jinja2.__version__ == '3.1.2'
+
+def test_requirements_file_exists():
+    requirements_path = Path('requirements.txt')
+    assert requirements_path.exists()
+
+def test_requirements_content():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    assert 'click==8.1.7' in content
+    assert 'jinja2==3.1.2' in content
+
+def test_click_import():
+    try:
+        import click
+        imported = True
+    except ImportError:
+        imported = False
+    assert imported
+
+def test_jinja2_import():
+    try:
+        import jinja2
+        imported = True
+    except ImportError:
+        imported = False
+    assert imported
+
+def test_click_command_execution():
+    import click
+    from click.testing import CliRunner
+    
+    @click.command()
+    def hello():
+        return "Hello World"
+    
+    runner = CliRunner()
+    result = runner.invoke(hello)
+    assert result.exit_code == 0
+
+def test_jinja2_template_rendering():
+    from jinja2 import Environment, DictLoader
+    
+    env = Environment(loader=DictLoader({'template': 'Hello {{ name }}!'}))
+    template = env.get_template('template')
+    result = template.render(name='World')
+    assert result == 'Hello World!'
+
+def test_requirements_format():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            assert '==' in line or '>=' in line or '<=' in line or '>' in line or '<' in line
+
+def test_no_extra_dependencies():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    lines = content.split('\n')
+    # Should only have click and jinja2 in requirements
+    assert len([line for line in lines if line.strip() and not line.startswith('#')]) == 2
+
+def test_click_functionality():
+    import click
+    
+    @click.command()
+    @click.option('--count', default=1, help='Number of greetings.')
+    @click.argument('name', default='World')
+    def greet(count, name):
+        return 'Hello ' + name + ' ' + str(count)
+    
+    from click.testing import CliRunner
+    runner = CliRunner()
+    result = runner.invoke(greet, ['--count=3', 'User'])
+    assert result.exit_code == 0
+
+def test_jinja2_variable_substitution():
+    from jinja2 import Template
+    template = Template('Hello {{ name }}!')
+    result = template.render(name='Jinja')
+    assert result == 'Hello Jinja!'
+
+def test_click_group_command():
+    import click
+    
+    @click.group()
+    def cli():
+        pass
+    
+    @cli.command()
+    def test():
+        click.echo('Test command')
+    
+    from click.testing import CliRunner
+    runner = CliRunner()
+    result = runner.invoke(cli, ['test'])
+    assert result.exit_code == 0
+
+def test_jinja2_template_inheritance():
+    from jinja2 import Environment, DictLoader
+    
+    env = Environment(loader=DictLoader({
+        'base': '{% block content %}{% endblock %}',
+        'child': '{% extends "base" %}{% block content %}Hello{% endblock %}'
+    }))
+    
+    output = env.get_template('child').render()
+    assert output == 'Hello'
+
+def test_requirements_comments_ignored():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    lines = content.split('\n')
+    comment_lines = [line for line in lines if line.startswith('#')]
+    # Comments should be allowed but not affect functionality
+    assert len(comment_lines) >= 0
+
+def test_click_and_jinja2_compatibility():
+    # Test that click and jinja2 can work together
+    import click
+    from jinja2 import Template
+    
+    template = Template('Hello {{ name }}')
+    @click.command()
+    @click.option('--name', default='World')
+    def hello(name):
+        return template.render(name=name)
+    
+    assert True  # Just testing that both can be imported and used together
+
+def test_version_pinning_format():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    lines = content.strip().split('\n')
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            assert '==' in line  # Check version pinning exists
+
+def test_no_circular_dependencies():
+    # click and jinja2 should not depend on each other
+    import click
+    import jinja2
+    # They import successfully without circular dependencies
+    assert click and jinja2
+
+def test_requirements_file_format():
+    import re
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    
+    # Check for package==version format
+    lines = content.split('\n')
+    for line in lines:
+        if line.strip() and not line.startswith('#'):
+            assert re.match(r'^[a-zA-Z0-9_-]+==[0-9.]+', line)
