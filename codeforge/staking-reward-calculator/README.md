@@ -1,157 +1,214 @@
 # Staking Reward Calculator
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-A command-line tool for calculating staking rewards with comprehensive analysis and visualization capabilities.
+A fullstack web application for calculating staking rewards with real-time network data integration, time-based projections, and ROS2 sensor compatibility.
 
 ## Features
 
-- **Stake Calculation**: Calculate estimated staking rewards based on current network parameters
-- **Reward Visualization**: Generate time-series visualizations of reward growth
-- **Risk Analysis**: Include risk factors affecting potential rewards (network changes, validator performance)
-- **Currency Conversion**: Automatic USD equivalent calculation using current market prices
-- **Multiple Networks**: Support for various blockchain networks
-- **Comprehensive Reporting**: Detailed output with risk assessments and projections
+- **Staking Calculations**: Real-time staking reward calculations with customizable parameters
+- **Network Data Integration**: Live blockchain network statistics and data
+- **Time-based Projections**: Future reward projections with visual charts
+- **ROS2 Compatibility**: Integration with ROS2 sensor data for enhanced functionality
+- **Real-time Price Data**: Cryptocurrency price oracle integration
+- **Responsive UI**: Modern React frontend with interactive visualizations
 
 ## Prerequisites
 
 - Python 3.8+
-- pip (Python package installer)
+- Node.js 14+
+- Docker and Docker Compose (for containerized deployment)
+- Redis server (included in Docker setup)
 
 ## Installation
 
-### From Source
+### Backend Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/staking-reward-calculator.git
+git clone <repository-url>
 cd staking-reward-calculator
 
-# Create virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# Install Python dependencies
+pip install -r backend/requirements.txt
 
-# Install dependencies
-pip install -r requirements.txt
+# Install Node.js dependencies
+cd frontend
+npm install
 ```
 
-### Using pip
+### Environment Variables
+
+Create a `.env` file based on `backend/.env.example`:
+
+```env
+# Database
+DATABASE_URL=sqlite:///./test.db
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# API Keys
+BLOCKCHAIN_API_KEY=your_api_key_here
+PRICE_ORACLE_API_KEY=your_price_api_key_here
+
+# ROS2 Settings
+ROS2_ENABLED=false
+```
+
+### Frontend Setup
 
 ```bash
-pip install staking-reward-calculator
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
+npm install
+
+# Development
+npm start
+
+# Production build
+npm run build
 ```
 
 ## Project Structure
 
 ```
 staking-reward-calculator/
-├── src/
-│   ├── cli.py              # CLI entry point
-│   ├── calculator.py        # Core calculation logic
-│   ├── visualizer.py       # Reward visualization
-│   ├── risk_analyzer.py    # Risk analysis logic
-│   ├── network_data.py     # Network data fetching
-│   └── currency_converter.py # Currency conversion
-├── tests/
-│   ├── test_calculator.py
-│   ├── test_visualizer.py
-│   ├── test_risk_analyzer.py
-│   ├── test_network_data.py
-│   └── test_currency_converter.py
-├── requirements.txt
-└── setup.py
+├── backend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── models/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   └── main.py
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── .env.example
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── api/
+    │   └── App.js
+    └── package.json
 ```
 
 ## Usage
 
-### Basic Usage
+### Running with Docker Compose
 
 ```bash
-# Calculate staking rewards
-python -m src.cli --stake 1000 --duration 365 --network ethereum
+# Start all services
+cd backend
+docker-compose up -d
 
-# With risk analysis
-python -m src.cli --stake 5000 --duration 180 --network cosmos --include-risk
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
 ```
 
-### Command Line Options
+### API Endpoints
 
-```bash
-python -m src.cli [OPTIONS]
+#### Staking Calculations
+```
+POST /api/calculator/rewards
+```
+Calculate staking rewards based on input parameters.
 
-Options:
-  --stake FLOAT                   Amount to stake
-  --duration INTEGER                Staking duration in days
-  --network TEXT                  Blockchain network (ethereum, cosmos, etc.)
-  --include-risk                  Include risk analysis in calculation
-  --currency TEXT                  Output currency (USD, EUR, etc.)
-  --help                         Show this message and exit
+#### Network Data
+```
+GET /api/network/stats
+GET /api/network/validators
+```
+
+#### Projections
+```
+GET /api/projections/future
+GET /api/projections/historical
 ```
 
 ## API Documentation
 
-### Core Modules
-
-#### `calculator.py`
-```python
-def calculate_rewards(stake_amount: float, duration: int, network: str) -> dict:
-    """
-    Calculate staking rewards based on network parameters
-    
-    Args:
-        stake_amount: Amount to stake
-        duration: Staking period in days
-        network: Target blockchain network
-        
-    Returns:
-        dict: Reward calculation results
-    """
+### Example Request
+```bash
+curl -X POST "http://localhost:8000/api/calculator/rewards" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stake_amount": 1000,
+    "duration_days": 365,
+    "compound_frequency": "daily"
+  }'
 ```
 
-#### `network_data.py`
-```python
-def fetch_network_parameters(network: str) -> dict:
-    """
-    Fetch current network parameters from external APIs
-    
-    Args:
-        network: Blockchain network identifier
-        
-    Returns:
-        dict: Current network parameters
-    """
+### Response
+```json
+{
+  "total_rewards": 150.50,
+  "apy": 15.5,
+  "projected_rewards": [
+    {"day": 30, "reward": 12.25},
+    {"day": 60, "reward": 25.75}
+  ]
+}
 ```
 
 ## Testing
 
 ```bash
-# Run all tests
+# Backend tests
+cd backend
 python -m pytest tests/
 
-# Run specific test modules
-python -m pytest tests/test_calculator.py
-python -m pytest tests/test_visualizer.py
+# Frontend tests
+cd frontend
+npm test
+
+# Integration tests
+npm run test:integration
 ```
 
 ## Deployment
 
-### Docker Deployment (Optional)
+### Production Deployment
 
-If using Docker for containerized deployment:
+1. **Build Docker Images**
+```bash
+# Backend
+cd backend
+docker build -t staking-calculator-backend .
 
-```dockerfile
-FROM python:3.9-slim
-
-WORKDIR /app
-COPY . .
-RUN pip install -r requirements.txt
-
-CMD ["python", "-m", "src.cli"]
+# Frontend
+cd frontend
+npm run build
 ```
 
-### Environment Variables
+2. **Environment Configuration**
+```bash
+# Set production environment variables
+export NODE_ENV=production
+export PORT=8080
+```
 
-No specific environment variables required. All configuration is handled via command-line arguments.
+3. **Docker Compose for Production**
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - redis
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+```
 
 ## License
 
@@ -160,7 +217,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 MIT License
 
-Copyright (c) 2024 staking-reward-calculator
+Copyright (c) 2024 Staking Reward Calculator
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
