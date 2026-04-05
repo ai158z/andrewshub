@@ -1,57 +1,40 @@
-FROM python:3.7-slim as builder
+FROM python:3.11-slim as builder
 
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --user -r requirements.txt
-
-# Copy source code
-COPY src/ src/
 COPY setup.py .
+COPY requirements.txt .
 
-# Install the application in development mode
-RUN pip install --user -e .
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-FROM python:3.7-slim
+FROM python:3.11-slim as runtime
 
-# Create non-root user
-RUN groupadd -r appuser \
-    && useradd -r -g appuser -d /app -s /bin/bash appuser \
-    && mkdir -p /app /output \
-    && chown -R appuser:appuser /app /output
+ENV USER=dockeruser
+ENV UID=10001
+ENV GID=10001
+
+RUN groupadd --gid $GID $USER && \
+    useradd --uid $UID --gid $GID -m $USER
 
 WORKDIR /app
 
-# Copy Python dependencies from builder stage
-COPY --from=builder /root/.local /home/appuser/.local
-COPY --from=builder /app /app
+COPY --from=builder /root/.local/lib/python3.11/site-packages /root/.local/lib/python3.11/site-packages
+COPY --from=builder /app/requirements.txt .
 
-# Set proper permissions
-RUN chown -R appuser:appuser /home/appuser/.local
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    rm -rf /var/lib/apt/lists/* && \
+    chown -R $USER:$USER /app
 
-# Switch to non-root user
-USER appuser
+COPY --from=builder /app/setup.py .
+COPY --from=builder /app/src ./src
 
-# Add local bin to PATH
-ENV PATH=/home/appuser/.local/bin:$PATH
+RUN pip install --no-cache-dir --user -e .
 
-# Create output directory
-RUN mkdir -p /app/output
+USER $USER
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import click, cookiecutter, yaml; print('OK')" || exit 1
-
-# Set entrypoint for the application
-ENTRYPOINT ["project-scaffolder"]
-CMD ["--help"]
-
-# Set working directory as volume for output files
-VOLUME ["/output"]
+ENTRYPOINT ["python", "-m", "project_scaffolder"]
