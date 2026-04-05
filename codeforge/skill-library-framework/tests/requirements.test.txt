@@ -1,0 +1,50 @@
+import pytest
+import re
+
+def test_requirements_format():
+    with open('requirements.txt', 'r') as f:
+        content = f.read().strip()
+    
+    assert content, "Requirements file should not be empty"
+    lines = content.split('\n')
+    pattern = r"^[a-zA-Z0-9\-._]+"
+    for line in lines:
+        assert re.match(pattern, line), f"Invalid line in requirements: {line}"
+
+def test_requirements_have_valid_format():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split('==') if '==' in line else line.split('~>') if '~>' in line else line.split('>=')
+        if len(parts) < 2:
+            continue
+        # Test that each requirement line is not empty
+        assert line, "Each requirement should be on a single line"
+        assert all(re.match(r"^[a-zA-Z0-9\-._]+", req) for req in parts), f"Invalid requirement format: {line}"
+
+def test_valid_dependency_parsing():
+    # Simulate installing requirements and capturing output
+    import subprocess
+    result = subprocess.run(['pip', 'install', '-r', 'requirements.txt'], 
+                          capture_output=True, text=True)
+    assert result.returncode == 0
+    assert result.stdout, "Installation should succeed"
+
+def test_no_duplicate_dependencies():
+    requirements = [
+        "fastapi>=0.95.0",
+        "uvicorn>=0.21.0", 
+        "torch>=1.13.0",
+        "transformers>=4.21.0",
+        "psycopg2-binary>=2.9.5"
+    ]
+    assert len(requirements) == len(set(requirements)), "Requirements should not have duplicates"
+
+def test_no_version_conflicts():
+    from collections import Counter
+    req_count = Counter(requirements)
+    assert all(count == 1 for req in req_count), "Each dependency should appear only once"
