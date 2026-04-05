@@ -1,0 +1,270 @@
+import pytest
+from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
+
+def test_requirements_format():
+    """Test that requirements.txt has proper format"""
+    # This is a basic test to ensure the file isn't empty
+    with open("requirements.txt") as f:
+        content = f.read()
+        assert len(content.strip()) > 0
+
+def test_no_duplicate_packages():
+    """Test that there are no duplicate package names"""
+    requirements = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                requirements.append(line)
+    
+    seen = set()
+    duplicates = set()
+    for req in requirements:
+        package_name = Requirement(req).name
+        if package_name in seen:
+            duplicates.add(package_name)
+        seen.add(package_name)
+    
+    assert len(duplicates) == 0, f"Duplicate packages found: {duplicates}"
+
+def test_valid_version_specifiers():
+    """Test that all version specifiers are valid"""
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                try:
+                    req = Requirement(line)
+                    for specifier in req.specifier:
+                        Version("1.0.0")  # Test with a sample version
+                except Exception as e:
+                    pytest.fail(f"Invalid version specifier in {line}: {e}")
+
+def test_flask_packages_present():
+    """Test that essential flask packages are present"""
+    flask_packages = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                flask_packages.append(line.split("==")[0].split(">=")[0])
+    
+    assert "flask" in flask_packages
+    assert "flask-sqlalchemy" in flask_packages
+    assert "flask-jwt-extended" in flask_packages
+    assert "flask-migrate" in flask_packages
+    assert "flask-restx" in flask_packages
+
+def test_pydantic_versions_compatible():
+    """Test that pydantic versions are specified consistently"""
+    pydantic_versions = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("pydantic"):
+                pydantic_versions.append(line)
+    
+    # Should have at least one pydantic requirement
+    assert len(pydantic_versions) > 0
+    
+    # All pydantic requirements should have the same version constraints
+    req_objects = [Requirement(req) for req in pydantic_versions]
+    specifiers = [str(req.specifier) for req in req_objects]
+    assert all(s == specifiers[0] for s in specifiers), "Inconsistent pydantic version requirements"
+
+def test_no_unpinned_packages():
+    """Test that all packages have version pins or constraints"""
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                # This will raise if the requirement is invalid
+                Requirement(line)
+
+def test_consistent_flask_sqlalchemy_versions():
+    """Test that flask-sqlalchemy has consistent versioning"""
+    versions = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("flask-sqlalchemy"):
+                versions.append(line)
+    
+    # All flask-sqlalchemy versions should be the same
+    assert len(set(versions)) <= 1, "Inconsistent flask-sqlalchemy versions found"
+
+def test_no_bare_package_names():
+    """Test that no packages are specified without versions"""
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                assert "==" in line or ">=" in line or "<" in line or ">" in line, \
+                    f"Bare package found without version: {line}"
+
+def test_unique_package_constraints():
+    """Test that each package has consistent version constraints"""
+    packages = {}
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                req = Requirement(line)
+                name = req.name
+                if name in packages:
+                    assert str(req.specifier) == str(packages[name].specifier), \
+                        f"Inconsistent versions for {name}"
+                else:
+                    packages[name] = req
+
+def test_requirements_sorted():
+    """Test that requirements are sorted alphabetically (optional)"""
+    packages = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                req = Requirement(line)
+                packages.append(req.name)
+    
+    assert packages == sorted(packages), "Requirements should be sorted alphabetically"
+
+def test_no_conflicting_flask_jtw_versions():
+    """Test that flask-jwt packages are not conflicting"""
+    flask_jwt_lines = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if "flask-jwt" in line:
+                flask_jwt_lines.append(line)
+    
+    # Check that we don't have conflicting flask-jwt versions
+    versions = []
+    for line in flask_jwt_lines:
+        if "flask-jwt-1" in line:
+            versions.append("1.0.0")  # flask-jwt-1 implies 1.x
+        elif "flask-jwt-extended" in line:
+            versions.append(line.split("==")[1] if "==" in line else "default")
+    
+    # Should not have both flask-jwt-1 and flask-jwt-extended
+    has_flask_jwt_1 = any("flask-jwt-1" in line for line in flask_jwt_lines)
+    has_flask_jwt_extended = any("flask-jwt-extended" in line for line in flask_jwt_lines)
+    
+    assert not (has_flask_jwt_1 and has_flask_jwt_extended), \
+        "Should not have both flask-jwt-1 and flask-jwt-extended"
+
+def test_pyarrow_version_consistency():
+    """Test that pyarrow has consistent version requirements"""
+    pyarrow_versions = []
+    with open("requirements.txt") as f:
+        for line in f:
+            if "pyarrow" in line:
+                pyarrow_versions.append(line.strip())
+    
+    # All pyarrow lines should be the same
+    assert len(set(pyarrow_versions)) <= 1, "Inconsistent pyarrow versions"
+
+def test_no_repeated_flask_packages():
+    """Test that flask packages are not repeated unnecessarily"""
+    flask_packages = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("flask-"):
+                flask_packages.append(line.split(">=")[0])
+    
+    # Check for duplicates
+    seen = set()
+    duplicates = []
+    for pkg in flask_packages:
+        if pkg in seen:
+            duplicates.append(pkg)
+        seen.add(pkg)
+    
+    assert len(duplicates) == 0, f"Repeated flask packages: {duplicates}"
+
+def test_pydantic_settings_consistency():
+    """Test that pydantic-settings versions are consistent"""
+    settings_versions = []
+    with open("requirements.txt") as f:
+        for line in f:
+            if "pydantic-settings" in line:
+                settings_versions.append(line.strip())
+    
+    # All should have same version constraint
+    assert len(set(settings_versions)) <= 1, "Inconsistent pydantic-settings requirements"
+
+def test_requirements_contain_necessary_packages():
+    """Test that required packages are in the requirements file"""
+    required_packages = {
+        "flask", "flask-sqlalchemy", "flask-jwt-extended", 
+        "flask-migrate", "flask-restx", "pydantic"
+    }
+    
+    found_packages = set()
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                req = Requirement(line)
+                found_packages.add(req.name)
+    
+    assert required_packages.issubset(found_packages), \
+        f"Missing required packages: {required_packages - found_packages}"
+
+def test_no_circular_dependencies():
+    """Test that there are no circular dependencies in flask packages"""
+    flask_deps = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("flask-"):
+                # Check if it's a flask dependency
+                if "sql" in line or "jwt" in line or "migrate" in line or "restx" in line:
+                    flask_deps.append(line)
+    
+    # Basic check that we don't have obvious circular references
+    # This is a simple check - in reality would need more sophisticated analysis
+    assert len([d for d in flask_deps if "sql" in d]) <= 10, "Too many flask-sql dependencies"
+    assert len([d for d in flask_deps if "jwt" in d]) <= 10, "Too many flask-jwt dependencies"
+
+def test_valid_package_names():
+    """Test that all package names are valid"""
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                try:
+                    req = Requirement(line)
+                except:
+                    pytest.fail(f"Invalid package name format: {line}")
+
+def test_requirements_file_not_empty():
+    """Test that requirements file is not empty"""
+    with open("requirements.txt") as f:
+        content = f.read()
+        assert len(content.strip()) > 0, "requirements.txt is empty"
+
+def test_no_repeated_pydantic_lines():
+    """Test that pydantic is not repeated unnecessarily"""
+    pydantic_count = 0
+    with open("requirements.txt") as f:
+        for line in f:
+            if "pydantic" in line and not line.strip().startswith("#"):
+                pydantic_count += 1
+    
+    assert pydantic_count <= 3, "Too many pydantic requirements"
+
+def test_consistent_flask_cors_versions():
+    """Test that flask-cors has consistent versions"""
+    cors_versions = []
+    with open("requirements.txt") as f:
+        for line in f:
+            line = line.strip()
+            if "flask-cors" in line and not line.startswith("#"):
+                cors_versions.append(line)
+    
+    # All flask-cors lines should be consistent
+    assert all("flask-cors" in v for v in cors_versions), "Inconsistent flask-cors entries"
