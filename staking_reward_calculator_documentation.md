@@ -1,3 +1,3 @@
 # Staking Reward Calculator Documentation Framework
 ...
-## 9. User Interface Design
+## 10. Future Enhancements
