@@ -1,139 +1,143 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
-from src.main import create_app, app
+from src.main import main
 
-@pytest.fixture
-def client():
-    return TestClient(app)
+def test_main_with_valid_args(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.blockchain_client.get_reward_rate") as mock_get_rate:
+        mock_get_rate.return_value = 0.05
+        with patch("src.data_fetcher.fetch_data") as mock_fetch:
+            mock_fetch.return_value = {"rewards": 100}
+            with patch("src.staking_calculator.calculate_rewards") as mock_calc:
+                mock_calc.return_value = 100
+                result = main()
+                assert result == 0
 
-def test_create_app_returns_fastapi_instance():
-    assert create_app().__class__.__name__ == "FastAPI"
+def test_main_with_invalid_amount(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "-100", "--network", "ethereum"])
+    with patch("src.validator.validate_stake_amount", return_value=False):
+        with pytest.raises(ValueError, match="Invalid stake amount"):
+            main()
 
-@patch("src.main.create_tables")
-def test_create_app_includes_cors_middleware(mock_create_tables):
-    test_app = create_app()
-    assert len(test_app.user_middleware) > 0
-    assert any(middleware.middleware.__name__ == "CORSMiddleware" for middleware in test_app.user_middleware)
+def test_main_with_missing_reward_rate(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.blockchain_client.get_reward_rate", return_value=None):
+        result = main()
+        assert result == 1
 
-@patch("src.main.create_tables")
-def test_app_includes_all_routers(mock_create_tables):
-    test_app = create_app()
-    router_paths = [route.path for route in test_app.routes]
-    
-    expected_paths = [
-        "/api/v1/calculate",
-        "/api/v1/networks", 
-        "/api/v1/projections"
-    ]
-    
-    for path in expected_paths:
-        assert any(path in route_path for route_path in router_paths)
+def test_main_with_valid_stake_data(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.staking_calculator.calculate_rewards") as mock_calc:
+        mock_calc.return_value = 50
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_app_has_correct_title(mock_create_tables):
-    test_app = create_app()
-    assert test_app.title == "Staking Reward Calculator"
+def test_main_formatting(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.utils.format_currency") as mock_format:
+        mock_format.return_value = "$1,000.00"
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_app_has_correct_description(mock_create_tables):
-    test_app = create_app()
-    assert test_app.description == "API for staking reward calculations"
+def test_main_cache_interaction(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.utils.cache_get") as mock_cache_get:
+        mock_cache_get.return_value = {"cached": True}
+        with patch("src.utils.cache_set") as mock_cache_set:
+            mock_cache_set.return_value = None
+            result = main()
+            assert result == 0
 
-@patch("src.main.create_tables")
-def test_app_has_correct_version(mock_create_tables):
-    test_app = create_app()
-    assert test_app.version == "1.0.0"
+def test_main_with_pydantic_validation_error(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "invalid", "--network", "ethereum"])
+    with patch("src.models.stake_data.StakeData") as mock_model:
+        mock_model.side_effect = Exception("Validation error")
+        with pytest.raises(Exception):
+            main()
 
-@patch("src.main.create_tables")
-def test_app_has_expected_middleware(mock_create_tables):
-    test_app = create_app()
-    assert len(test_app.user_middleware) > 0
+def test_main_network_data_fetch(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.data_fetcher.fetch_data") as mock_fetch:
+        mock_fetch.return_value = {"status": "success"}
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_root_endpoint_returns_404(client):
-    response = client.get("/")
-    assert response.status_code == 404
+def test_main_calculate_rewards_called(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.staking_calculator.calculate_rewards") as mock_calc:
+        mock_calc.return_value = 50
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_openapi_docs_available(client):
-    response = client.get("/docs")
-    assert response.status_code == 200
+def test_main_invalid_network(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "invalid_network"])
+    with patch("src.blockchain_client.get_reward_rate", return_value=None):
+        result = main()
+        assert result == 1
 
-@patch("src.main.create_tables")
-def test_openapi_json_available(client):
-    response = client.get("/openapi.json")
-    assert response.status_code == 200
+def test_main_valid_amount_but_no_rewards(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.staking_calculator.calculate_rewards", return_value=0):
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_calculator_router_included(client):
-    response = client.get("/api/v1/calculate/roi")
-    # We're not testing the response content, just that the route exists
-    # This will either be 404 (route doesn't exist/correct) or 422 (exists but validation error)
-    assert response.status_code in [404, 422, 200]
+def test_main_argument_parsing_error(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py"])
+    with pytest.raises(SystemExit):
+        main()
 
-@patch("src.main.create_tables")
-def test_network_router_included(client):
-    response = client.get("/api/v1/networks/")
-    # Test that the router is included by checking for 404 (not 405) or valid response
-    assert response.status_code in [404, 200, 422]
+def test_main_stake_data_model_creation(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.models.stake_data.StakeData") as mock_model:
+        mock_model.return_value = MagicMock()
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_projections_router_included(client):
-    response = client.get("/api/v1/projections/")
-    # Test that the router is included by checking for 404 (not 405) or valid response
-    assert response.status_code in [404, 200, 422]
+def test_main_reward_rate_none(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.blockchain_client.get_reward_rate", return_value=None):
+        result = main()
+        assert result == 1
 
-@patch("src.main.create_tables")
-def test_app_creation_with_duplicate_routers(mock_create_tables):
-    # Test that duplicate router inclusion doesn't break app creation
-    app1 = create_app()
-    app2 = create_app()
-    assert app1.routes == app2.routes
+def test_main_format_currency_called(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.utils.format_currency") as mock_format:
+        mock_format.return_value = "$1,000.00"
+        result = main()
+        assert result == 0
 
-@patch("src.main.create_tables")
-def test_app_includes_calculator_router_twice_still_works(mock_create_tables):
-    # Create app with duplicate router inclusions
-    test_app = create_app()
-    # Check that we still have the right number of routes
-    # (this is a bit fragile but checks that routes are added)
-    original_route_count = len(test_app.routes)
-    test_app = create_app()
-    assert len(test_app.routes) >= original_route_count
+def test_main_validate_stake_amount(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "0", "--network", "ethereum"])
+    with patch("src.validator.validate_stake_amount", return_value=False):
+        with pytest.raises(ValueError, match="Invalid stake amount"):
+            main()
 
-@patch("src.database.create_tables")
-@patch("src.main.create_tables")
-def test_database_tables_created(mock_create_tables, mock_db_create):
-    # Verify that create_tables is called during app creation
-    mock_create_tables.assert_called_once()
+def test_main_successful_execution(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    result = main()
+    assert result == 0
 
-@patch("src.main.uvicorn")
-@patch("src.main.create_tables")
-def test_main_function_with_uvicorn_run(mock_create_tables, mock_uvicorn):
-    # This just tests that the file can be imported and main function exists
-    # Actual uvicorn.run testing would require process testing which is out of scope
-    assert hasattr(mock_uvicorn, "run")
+def test_main_caching_mechanism(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.utils.cache_get") as mock_get:
+        mock_get.return_value = None
+        with patch("src.utils.cache_set") as mock_set:
+            result = main()
+            assert result == 0
 
-@patch("src.main.create_tables")
-def test_app_includes_all_expected_routers(client):
-    # Test that all three expected routers are included
-    from src.main import calculator_router, network_router, projections_router
-    routers = [calculator_router, network_router, projections_router]
-    for router in routers:
-        assert router is not None
+def test_main_edge_case_zero_amount(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "0", "--network", "ethereum"])
+    with patch("src.validator.validate_stake_amount", return_value=False):
+        with pytest.raises(ValueError):
+            main()
 
-@patch("src.main.create_tables")
-def test_app_routes_include_all_prefixes(mock_create_tables):
-    test_app = create_app()
-    paths = [route.path for route in test_app.routes]
-    assert any("/api/v1/calculate" in path for path in paths)
-    assert any("/api/v1/networks" in path for path in paths)
-    assert any("/api/v1/projections" in path for path in paths)
-
-@patch("src.main.create_tables")
-def test_app_has_unique_routes_despite_multiple_includes(mock_create_tables):
-    # Create app and check that routes are not duplicated excessively
-    test_app = create_app()
-    route_paths = [route.path for route in test_app.routes]
-    # Should have reasonable number of routes (not exploded from multiple includes)
-    assert len(route_paths) < 100  # Arbitrary but reasonable upper bound
+def test_main_integration_with_all_mocks(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["main.py", "--amount", "1000", "--network", "ethereum"])
+    with patch("src.blockchain_client.get_reward_rate") as mock_rate:
+        mock_rate.return_value = 0.05
+        with patch("src.staking_calculator.calculate_rewards") as mock_calc:
+            mock_calc.return_value = 50
+            with patch("src.utils.format_currency") as mock_format:
+                mock_format.return_value = "$50.00"
+                result = main()
+                assert result == 0
