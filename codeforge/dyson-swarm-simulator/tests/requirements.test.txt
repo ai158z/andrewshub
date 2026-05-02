@@ -1,0 +1,142 @@
+def test_requirements_txt_content():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    assert 'click==8.1.7' in content
+    assert 'numpy==1.24.3' in content
+
+def test_requirements_txt_format():
+    with open('requirements_txt', 'r') as f:
+        lines = f.readlines()
+    assert len(lines) == 2
+    assert lines[0].strip() == 'click==8.1.7'
+    assert lines[1].strip() == 'numpy==1.24.3'
+
+def test_click_version_pinned():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    assert 'click==8.1.7' in content
+    assert content.count('click') == 1
+
+def test_numpy_version_pinned():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    assert 'numpy==1.24.3' in content
+    assert content.count('numpy') == 1
+
+def test_no_extra_packages():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    lines = content.strip().split('\n')
+    assert len(lines) == 2
+    assert len([line for line in lines if line.strip()]) == 2
+
+def test_no_empty_lines():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    assert '\n\n' not in content
+
+def test_line_endings():
+    with open('requirements.txt', 'r') as f:
+        raw_content = f.read()
+    assert raw_content.count('\n') == 2
+
+def test_package_names_lowercase():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        pkg_name = line.split('==')[0]
+        assert pkg_name == pkg_name.lower()
+
+def test_version_specifiers():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        assert '==' in line
+        parts = line.strip().split('==')
+        assert len(parts) == 2
+        assert parts[1] != ''
+
+def test_no_duplicate_packages():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    packages = [line.split('==')[0] for line in content.strip().split('\n') if line.strip()]
+    assert len(packages) == len(set(packages))
+
+def test_file_encoding():
+    with open('requirements.txt', 'r', encoding='utf-8') as f:
+        content = f.read()
+    assert 'click' in content
+    assert 'numpy' in content
+
+def test_no_whitespace_around_equals():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        if '==' in line:
+            parts = line.strip().split('==')
+            assert len(parts) == 2
+            assert not parts[0].endswith(' ')
+            assert not parts[1].startswith(' ')
+
+def test_valid_package_format():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        assert '==' in line
+        assert line.count('==') == 1
+        name, version = line.strip().split('==')
+        assert name.islower()
+        assert len(version.split('.')) >= 3
+
+def test_requirements_sorted():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    packages = [line.split('==')[0].lower() for line in lines if '==' in line]
+    assert packages == sorted(packages)
+
+def test_no_comments_or_empty_lines():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    lines = content.strip().split('\n')
+    for line in lines:
+        if line.strip():
+            assert not line.startswith('#')
+            assert '==' in line
+
+def test_exact_versions():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    versions = [line.split('==')[1].strip() for line in lines if '==' in line]
+    for version in versions:
+        parts = version.split('.')
+        assert len(parts) >= 3
+        assert all(part.isdigit() for part in parts[:2])
+
+def test_package_names_valid():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    names = [line.split('==')[0] for line in lines if '==' in line]
+    valid_names = ['click', 'numpy']
+    assert set(names) == set(valid_names)
+
+def test_file_structure():
+    with open('requirements.txt', 'r') as f:
+        lines = f.readlines()
+    assert len(lines) == 2
+    assert 'click==8.1.7' in ''.join(lines)
+    assert 'numpy==1.24.3' in ''.join(lines)
+
+def test_no_trailing_whitespace():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    lines = content.split('\n')
+    for line in lines:
+        assert line.strip() == line
+
+def test_consistent_formatting():
+    with open('requirements.txt', 'r') as f:
+        content = f.read()
+    lines = content.strip().split('\n')
+    for line in lines:
+        if line:
+            assert line == line.lower()
